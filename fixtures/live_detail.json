@@ -1,0 +1,73 @@
+{
+  "code": 200,
+  "message": null,
+  "content": {
+    "liveId": 900000001,
+    "liveTitle": "치지직 스위치 MVP 테스트 방송",
+    "status": "OPEN",
+    "liveImageUrl": "https://ssl.pstatic.net/static/nng/glive/icon.png",
+    "defaultThumbnailImageUrl": "https://ssl.pstatic.net/static/nng/glive/icon.png",
+    "concurrentUserCount": 5321,
+    "accumulateCount": 129991,
+    "adult": false,
+    "krOnlyViewing": false,
+    "clipActive": true,
+    "chatChannelId": "chat-switch-demo",
+    "liveCategory": "GAME",
+    "liveCategoryValue": "젤다의 전설",
+    "chatActive": true,
+    "paidPromotion": false,
+    "allowSubscriberInFollowerMode": true,
+    "timeMachineActive": false,
+    "timeMachinePlayback": false,
+    "channel": {
+      "channelId": "channel-switch-demo",
+      "channelName": "스위치데모",
+      "channelImageUrl": "https://ssl.pstatic.net/static/nng/glive/icon.png",
+      "verifiedMark": true
+    },
+    "livePlaybackJson": {
+      "meta": {
+        "videoId": "demo-video-id",
+        "streamSeq": 1,
+        "liveId": "900000001",
+        "paidLive": false,
+        "cdnInfo": {
+          "cdnType": "GLOBAL"
+        }
+      },
+      "serviceMeta": {
+        "contentType": "LIVE"
+      },
+      "live": {
+        "start": "2026-03-27T16:00:00+09:00",
+        "open": "2026-03-27T16:00:00+09:00",
+        "timeMachine": false,
+        "status": "OPEN"
+      },
+      "api": [],
+      "media": [
+        {
+          "mediaId": "HLS",
+          "protocol": "HLS",
+          "path": "https://example.invalid/chzzk/master.m3u8",
+          "latency": "NORMAL",
+          "encodingTrack": []
+        },
+        {
+          "mediaId": "LLHLS",
+          "protocol": "LLHLS",
+          "path": "https://example.invalid/chzzk/master.m3u8",
+          "latency": "LOW",
+          "encodingTrack": []
+        }
+      ],
+      "thumbnail": {
+        "snapshotThumbnailTemplate": "https://example.invalid/thumb_{type}.jpg",
+        "types": [
+          "720"
+        ]
+      }
+    }
+  }
+}

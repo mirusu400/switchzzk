@@ -1,0 +1,43 @@
+{
+  "code": 200,
+  "message": null,
+  "content": {
+    "size": 2,
+    "page": {
+      "next": {
+        "concurrentUserCount": 14250,
+        "liveId": 900000003
+      }
+    },
+    "data": [
+      {
+        "liveId": 900000001,
+        "liveTitle": "치지직 스위치 MVP 테스트 방송",
+        "liveImageUrl": "https://ssl.pstatic.net/static/nng/glive/icon.png",
+        "concurrentUserCount": 5321,
+        "liveCategory": "GAME",
+        "liveCategoryValue": "젤다의 전설",
+        "channel": {
+          "channelId": "channel-switch-demo",
+          "channelName": "스위치데모",
+          "channelImageUrl": "https://ssl.pstatic.net/static/nng/glive/icon.png",
+          "verifiedMark": true
+        }
+      },
+      {
+        "liveId": 900000002,
+        "liveTitle": "치지직 홈브류 개발 로그",
+        "liveImageUrl": "https://ssl.pstatic.net/static/nng/glive/icon.png",
+        "concurrentUserCount": 1876,
+        "liveCategory": "TALK",
+        "liveCategoryValue": "Just Chatting",
+        "channel": {
+          "channelId": "channel-homebrew-dev",
+          "channelName": "홈브류개발자",
+          "channelImageUrl": "https://ssl.pstatic.net/static/nng/glive/icon.png",
+          "verifiedMark": false
+        }
+      }
+    ]
+  }
+}

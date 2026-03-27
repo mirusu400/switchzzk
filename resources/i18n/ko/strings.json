@@ -1,0 +1,11 @@
+{
+    "app/title": "CHZZK",
+    "app/live": "라이브",
+    "app/settings": "설정",
+    "app/loading": "로딩 중...",
+    "app/viewers": "명 시청 중",
+    "app/refresh": "새로고침",
+    "app/low_latency": "저지연 모드",
+    "app/play": "재생",
+    "app/back": "뒤로"
+}

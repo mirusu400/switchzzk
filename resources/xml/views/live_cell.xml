@@ -1,0 +1,43 @@
+<brls:Box
+    width="auto"
+    height="auto"
+    axis="column"
+    paddingTop="12"
+    paddingBottom="12"
+    paddingLeft="16"
+    paddingRight="16"
+    focusable="true"
+    cornerRadius="6">
+
+    <brls:Box width="auto" height="auto" axis="row" justifyContent="spaceBetween">
+        <brls:Label
+            id="cell/channel"
+            width="auto"
+            height="auto"
+            fontSize="16"
+            textColor="#B0B0B0" />
+
+        <brls:Label
+            id="cell/viewers"
+            width="auto"
+            height="auto"
+            fontSize="14"
+            textColor="#FF6B6B" />
+    </brls:Box>
+
+    <brls:Label
+        id="cell/title"
+        width="auto"
+        height="auto"
+        fontSize="20"
+        marginTop="4"
+        marginBottom="4" />
+
+    <brls:Label
+        id="cell/category"
+        width="auto"
+        height="auto"
+        fontSize="14"
+        textColor="#808080" />
+
+</brls:Box>

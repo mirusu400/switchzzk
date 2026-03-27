@@ -71,6 +71,13 @@ fi
 mkdir -p "$WORK_DIR"
 
 # ─── FFmpeg 빌드 ───
+# 이미 커스텀 ffmpeg가 설치되어 있으면 건너뛰기
+FFMPEG_MARKER="$PORTLIBS_PREFIX/lib/.custom_ffmpeg_installed"
+if [ "$SKIP_FFMPEG" -eq 0 ] && [ -f "$FFMPEG_MARKER" ]; then
+  echo "=== Custom ffmpeg already installed (cached), skipping ==="
+  SKIP_FFMPEG=1
+fi
+
 if [ "$SKIP_FFMPEG" -eq 0 ]; then
   echo ""
   echo "=== Building custom ffmpeg ==="
@@ -150,6 +157,7 @@ if [ "$SKIP_FFMPEG" -eq 0 ]; then
   make install
   rm -rf "${PORTLIBS_PREFIX}/share/ffmpeg" 2>/dev/null || true
 
+  touch "$FFMPEG_MARKER"
   echo "=== ffmpeg build complete ==="
 fi
 

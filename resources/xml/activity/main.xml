@@ -1,0 +1,32 @@
+<brls:AppletFrame footerHidden="false">
+    <brls:TabFrame
+        title="CHZZK"
+        icon="@res/icon/icon.jpg">
+
+        <brls:Tab label="@i18n/app/live">
+            <LiveTab />
+        </brls:Tab>
+
+        <brls:Separator />
+
+        <brls:Tab label="@i18n/app/settings">
+            <brls:Box
+                width="auto"
+                height="auto"
+                axis="column"
+                paddingTop="50"
+                paddingBottom="50"
+                paddingLeft="75"
+                paddingRight="75">
+
+                <brls:Label
+                    width="auto"
+                    height="auto"
+                    text="switch-chzzk v0.2.0"
+                    fontSize="24" />
+
+            </brls:Box>
+        </brls:Tab>
+
+    </brls:TabFrame>
+</brls:AppletFrame>

@@ -1,0 +1,11 @@
+{
+    "app/title": "CHZZK",
+    "app/live": "Live",
+    "app/settings": "Settings",
+    "app/loading": "Loading...",
+    "app/viewers": " viewers",
+    "app/refresh": "Refresh",
+    "app/low_latency": "Low Latency",
+    "app/play": "Play",
+    "app/back": "Back"
+}

@@ -32,7 +32,7 @@ void LiveCell::setData(const chzzk::LiveInfo& info) {
     if (this->titleLabel)
         this->titleLabel->setText(info.live_title);
     if (this->viewerLabel)
-        this->viewerLabel->setText(std::to_string(info.concurrent_user_count) + "명");
+        this->viewerLabel->setText(chzzk::format_viewer_count(info.concurrent_user_count) + "명");
     if (this->categoryLabel)
         this->categoryLabel->setText(info.live_category_value);
 }
@@ -127,8 +127,8 @@ LiveTab::LiveTab() {
         return true;
     });
 
-    dbg("LiveTab: constructor done (no auto-fetch)");
-    // 초기 로드는 하지 않음 — 사용자가 X로 새로고침
+    dbg("LiveTab: constructor done, auto-fetching");
+    this->fetchLives();
 }
 
 LiveTab::~LiveTab() {

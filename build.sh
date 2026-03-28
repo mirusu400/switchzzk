@@ -20,7 +20,7 @@ fi
 # named volume 생성 (없으면)
 sg docker -c "docker volume create $VOLUME_NAME 2>/dev/null || true"
 
-echo "=== Building switch_chzzk (portlibs cached in volume: $VOLUME_NAME) ==="
+echo "=== Building switchzzk (portlibs cached in volume: $VOLUME_NAME) ==="
 
 sg docker -c "docker run --rm \
   -v \"\$PWD:/work\" \
@@ -39,10 +39,10 @@ sg docker -c "docker run --rm \
       -DPLATFORM_SWITCH=ON \
       -DUSE_DEKO3D=OFF \
       2>&1 | tail -5
-    cmake --build cmake-build-switch -j\$(nproc) --target switch_chzzk.nro 2>&1 | tail -10
+    cmake --build cmake-build-switch -j\$(nproc) --target switchzzk.nro 2>&1 | tail -10
   '
 "
 
 echo ""
 echo "=== Build complete ==="
-ls -la cmake-build-switch/switch_chzzk.nro 2>/dev/null
+ls -la cmake-build-switch/switchzzk.nro 2>/dev/null

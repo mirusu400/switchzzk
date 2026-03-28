@@ -1,15 +1,23 @@
 <brls:AppletFrame footerHidden="false">
     <brls:TabFrame
-        title="CHZZK"
+        title="Switchzzk"
         icon="@res/icon/icon.jpg">
 
-        <brls:Tab label="@i18n/app/live">
+        <brls:Tab label="인기 라이브">
             <LiveTab />
+        </brls:Tab>
+
+        <brls:Tab label="카테고리">
+            <CategoryTab />
+        </brls:Tab>
+
+        <brls:Tab label="검색">
+            <SearchTab />
         </brls:Tab>
 
         <brls:Separator />
 
-        <brls:Tab label="@i18n/app/settings">
+        <brls:Tab label="설정">
             <brls:Box
                 width="auto"
                 height="auto"
@@ -22,8 +30,16 @@
                 <brls:Label
                     width="auto"
                     height="auto"
-                    text="switch-chzzk v0.2.0"
+                    text="Switchzzk v0.2.0"
                     fontSize="24" />
+
+                <brls:Label
+                    width="auto"
+                    height="auto"
+                    text="치지직 라이브 스트리밍 for Nintendo Switch"
+                    fontSize="16"
+                    textColor="#808080"
+                    marginTop="10" />
 
             </brls:Box>
         </brls:Tab>

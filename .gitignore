@@ -14,9 +14,9 @@ build/
 *.dll
 *.lib
 
-# Switch screenshots / captures
-*.jpg
-*.png
+# Switch screenshots / captures (root level)
+/*.jpg
+/*.png
 
 # Logs
 *.log

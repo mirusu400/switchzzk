@@ -9,6 +9,8 @@
 
 #include "activity/main_activity.hpp"
 #include "tab/live_tab.hpp"
+#include "tab/category_tab.hpp"
+#include "tab/search_tab.hpp"
 #include "chzzk/switch_player.hpp"
 
 using namespace brls::literals;
@@ -34,11 +36,13 @@ static bool run_borealis_ui() {
     }
 
     dbg("borealis: createWindow");
-    brls::Application::createWindow("CHZZK");
+    brls::Application::createWindow("Switchzzk");
     brls::Application::getPlatform()->setThemeVariant(brls::ThemeVariant::DARK);
     brls::Application::setGlobalQuit(false);
 
     brls::Application::registerXMLView("LiveTab", LiveTab::create);
+    brls::Application::registerXMLView("CategoryTab", CategoryTab::create);
+    brls::Application::registerXMLView("SearchTab", SearchTab::create);
     brls::Application::pushActivity(new MainActivity());
 
     dbg("borealis: entering mainLoop");
@@ -50,7 +54,7 @@ static bool run_borealis_ui() {
 
 int main(int argc, char* argv[]) {
 #ifdef __SWITCH__
-    g_logfile = fopen("sdmc:/switch/switch_chzzk_borealis.log", "w");
+    g_logfile = fopen("sdmc:/switch/switchzzk.log", "w");
     dbg("=== switch-chzzk borealis start ===");
 #endif
 

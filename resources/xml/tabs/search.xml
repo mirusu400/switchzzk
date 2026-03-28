@@ -1,0 +1,22 @@
+<brls:Box
+    width="auto"
+    height="auto"
+    axis="column"
+    paddingTop="30"
+    paddingLeft="40"
+    paddingRight="40">
+
+    <brls:Label
+        id="search/statusbar"
+        width="auto"
+        height="auto"
+        text="X로 검색어 입력"
+        fontSize="18"
+        marginBottom="16" />
+
+    <brls:RecyclerFrame
+        id="search/recycler"
+        width="auto"
+        grow="1.0" />
+
+</brls:Box>

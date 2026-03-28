@@ -2,7 +2,7 @@
 
 ## 목적
 
-이 저장소는 닌텐도 스위치 CFW 홈브류로 구동되는 치지직(CHZZK) 라이브 스트리밍 앱을 만드는 프로젝트다. 기준 레퍼런스는 `reference/unofficial_chzzk_android_tv`이며, 현재 목표는 전체 기능 이식이 아니라 `실제 스위치 홈브류에서 안정적으로 굴러가는 MVP`다.
+**Switchzzk** — 닌텐도 스위치 CFW 홈브류로 구동되는 치지직(CHZZK) 라이브 스트리밍 앱. 기준 레퍼런스는 `reference/unofficial_chzzk_android_tv`이며, 현재 목표는 전체 기능 이식이 아니라 `실제 스위치 홈브류에서 안정적으로 굴러가는 MVP`다.
 
 ## 현재 상태
 

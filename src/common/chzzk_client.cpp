@@ -244,4 +244,96 @@ std::optional<ResolvedPlayback> ChzzkClient::resolve_playback(
   return resolved;
 }
 
+std::optional<CategoryListResponse> ChzzkClient::get_live_categories(int size) {
+  const std::string url = std::string(kServiceBaseUrl) + "/v1/categories/live?size=" +
+                          std::to_string(size);
+  auto payload = http_client_.get(url, {{"User-Agent", kDefaultUserAgent}});
+  if (!payload.has_value()) return std::nullopt;
+
+  const auto root = json::parse(*payload, nullptr, false);
+  if (root.is_discarded()) return std::nullopt;
+
+  const auto& content = unwrap_content(root);
+  if (!content.is_object() || !content.contains("data") || !content.at("data").is_array())
+    return std::nullopt;
+
+  CategoryListResponse response;
+  for (const auto& item : content.at("data")) {
+    CategoryInfo cat;
+    cat.category_type = get_string(item, "categoryType");
+    cat.category_id = get_string(item, "categoryId");
+    cat.category_value = get_string(item, "categoryValue");
+    cat.poster_image_url = get_string(item, "posterImageUrl");
+    cat.concurrent_user_count = get_int(item, "concurrentUserCount", 0);
+    response.data.push_back(std::move(cat));
+  }
+  return response;
+}
+
+std::optional<LiveListResponse> ChzzkClient::get_category_lives(
+    const std::string& category_type,
+    const std::string& category_id,
+    int size) {
+  const std::string url = std::string(kServiceBaseUrl) + "/v2/categories/" +
+                          category_type + "/" + category_id + "/lives?size=" +
+                          std::to_string(size);
+  auto payload = http_client_.get(url, {{"User-Agent", kDefaultUserAgent}});
+  if (!payload.has_value()) return std::nullopt;
+
+  const auto root = json::parse(*payload, nullptr, false);
+  if (root.is_discarded()) return std::nullopt;
+
+  const auto& content = unwrap_content(root);
+  if (!content.is_object() || !content.contains("data") || !content.at("data").is_array())
+    return std::nullopt;
+
+  LiveListResponse response;
+  for (const auto& item : content.at("data")) {
+    response.data.push_back(parse_live_info(item));
+  }
+  return response;
+}
+
+std::optional<SearchChannelResponse> ChzzkClient::search_channels(
+    const std::string& keyword, int size, int offset) {
+  // URL-encode keyword (minimal: spaces → +)
+  std::string encoded;
+  for (char c : keyword) {
+    if (c == ' ') encoded += '+';
+    else encoded += c;
+  }
+  const std::string url = std::string(kServiceBaseUrl) + "/v1/search/channels?keyword=" +
+                          encoded + "&size=" + std::to_string(size) +
+                          "&offset=" + std::to_string(offset);
+  auto payload = http_client_.get(url, {{"User-Agent", kDefaultUserAgent}});
+  if (!payload.has_value()) return std::nullopt;
+
+  const auto root = json::parse(*payload, nullptr, false);
+  if (root.is_discarded()) return std::nullopt;
+
+  const auto& content = unwrap_content(root);
+  if (!content.is_object() || !content.contains("data") || !content.at("data").is_array())
+    return std::nullopt;
+
+  SearchChannelResponse response;
+  for (const auto& item : content.at("data")) {
+    SearchChannelResult result;
+    if (item.contains("channel") && item.at("channel").is_object()) {
+      result.channel = parse_channel(item.at("channel"));
+    }
+    if (item.contains("live") && item.at("live").is_object()) {
+      const auto& live = item.at("live");
+      result.is_live = true;
+      result.concurrent_user_count = get_int(live, "concurrentUserCount", 0);
+      result.live_title = get_string(live, "liveTitle");
+      result.live_category_value = get_string(live, "liveCategoryValue");
+    }
+    response.data.push_back(std::move(result));
+  }
+  if (content.contains("size")) {
+    response.total_count = get_int(content, "size");
+  }
+  return response;
+}
+
 }  // namespace chzzk

@@ -1,0 +1,22 @@
+<brls:Box
+    width="auto"
+    height="auto"
+    axis="column"
+    paddingTop="30"
+    paddingLeft="40"
+    paddingRight="40">
+
+    <brls:Label
+        id="cat/status"
+        width="auto"
+        height="auto"
+        text="X로 카테고리 불러오기"
+        fontSize="18"
+        marginBottom="16" />
+
+    <brls:RecyclerFrame
+        id="cat/recycler"
+        width="auto"
+        grow="1.0" />
+
+</brls:Box>

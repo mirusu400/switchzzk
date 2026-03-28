@@ -1,0 +1,35 @@
+<brls:Box
+    width="auto"
+    height="auto"
+    axis="column"
+    paddingTop="12"
+    paddingBottom="12"
+    paddingLeft="16"
+    paddingRight="16"
+    focusable="true"
+    cornerRadius="6">
+
+    <brls:Box width="auto" height="auto" axis="row" justifyContent="spaceBetween">
+        <brls:Label
+            id="search/channel"
+            width="auto"
+            height="auto"
+            fontSize="18" />
+
+        <brls:Label
+            id="search/status"
+            width="auto"
+            height="auto"
+            fontSize="14"
+            textColor="#4CAF50" />
+    </brls:Box>
+
+    <brls:Label
+        id="search/title"
+        width="auto"
+        height="auto"
+        fontSize="14"
+        textColor="#B0B0B0"
+        marginTop="4" />
+
+</brls:Box>

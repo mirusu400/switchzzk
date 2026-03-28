@@ -81,4 +81,48 @@ struct ResolvedPlayback {
   PlaybackResolution resolution;
 };
 
+// 카테고리
+struct CategoryInfo {
+  std::string category_type;
+  std::string category_id;
+  std::string category_value;
+  std::string poster_image_url;
+  int concurrent_user_count = 0;
+};
+
+struct CategoryListResponse {
+  std::vector<CategoryInfo> data;
+};
+
+// 검색
+struct SearchChannelResult {
+  Channel channel;
+  bool is_live = false;
+  int concurrent_user_count = 0;
+  std::string live_title;
+  std::string live_category_value;
+};
+
+struct SearchChannelResponse {
+  std::vector<SearchChannelResult> data;
+  int total_count = 0;
+};
+
+// 유틸
+inline std::string format_viewer_count(int count) {
+  if (count >= 10000) {
+    int major = count / 10000;
+    int minor = (count % 10000) / 1000;
+    if (minor > 0)
+      return std::to_string(major) + "." + std::to_string(minor) + "만";
+    return std::to_string(major) + "만";
+  }
+  if (count >= 1000) {
+    return std::to_string(count / 1000) + "," +
+           std::string(3 - std::to_string(count % 1000).length(), '0') +
+           std::to_string(count % 1000);
+  }
+  return std::to_string(count);
+}
+
 }  // namespace chzzk

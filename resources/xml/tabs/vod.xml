@@ -1,0 +1,22 @@
+<brls:Box
+    width="auto"
+    height="auto"
+    axis="column"
+    paddingTop="30"
+    paddingLeft="40"
+    paddingRight="40">
+
+    <brls:Label
+        id="vod/status"
+        width="auto"
+        height="auto"
+        text="인기 VOD"
+        fontSize="18"
+        marginBottom="16" />
+
+    <brls:RecyclerFrame
+        id="vod/recycler"
+        width="auto"
+        grow="1.0" />
+
+</brls:Box>

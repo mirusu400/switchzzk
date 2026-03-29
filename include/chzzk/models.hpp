@@ -108,6 +108,45 @@ struct SearchChannelResponse {
   int total_count = 0;
 };
 
+// VOD
+struct VodInfo {
+  int video_no = 0;
+  std::string video_id;
+  std::string video_title;
+  std::string thumbnail_image_url;
+  int duration = 0;
+  int read_count = 0;
+  std::string video_category_value;
+  std::string publish_date;
+  Channel channel;
+};
+
+struct VodListResponse {
+  std::vector<VodInfo> data;
+};
+
+struct VodDetail {
+  int video_no = 0;
+  std::string video_id;
+  std::string video_title;
+  std::string in_key;
+  int duration = 0;
+  Channel channel;
+};
+
+// 유틸
+inline std::string format_duration(int seconds) {
+  int h = seconds / 3600;
+  int m = (seconds % 3600) / 60;
+  int s = seconds % 60;
+  char buf[32];
+  if (h > 0)
+    snprintf(buf, sizeof(buf), "%d:%02d:%02d", h, m, s);
+  else
+    snprintf(buf, sizeof(buf), "%d:%02d", m, s);
+  return buf;
+}
+
 // 유틸
 inline std::string format_viewer_count(int count) {
   if (count >= 10000) {

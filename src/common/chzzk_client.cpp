@@ -128,9 +128,14 @@ std::optional<Media> choose_media(const std::vector<Media>& media_list,
 
 ChzzkClient::ChzzkClient(HttpClient& http_client) : http_client_(http_client) {}
 
-std::optional<LiveListResponse> ChzzkClient::get_popular_lives(int size) {
-  const std::string url = std::string(kServiceBaseUrl) + "/v1/lives?size=" +
-                          std::to_string(size) + "&sortType=POPULAR";
+std::optional<LiveListResponse> ChzzkClient::get_popular_lives(
+    int size, std::optional<int> cursor_count, std::optional<std::int64_t> cursor_id) {
+  std::string url = std::string(kServiceBaseUrl) + "/v1/lives?size=" +
+                    std::to_string(size) + "&sortType=POPULAR";
+  if (cursor_count.has_value())
+    url += "&concurrentUserCount=" + std::to_string(*cursor_count);
+  if (cursor_id.has_value())
+    url += "&liveId=" + std::to_string(*cursor_id);
   auto payload = http_client_.get(url, {{"User-Agent", kDefaultUserAgent}});
   if (!payload.has_value()) {
     return std::nullopt;
@@ -334,6 +339,86 @@ std::optional<SearchChannelResponse> ChzzkClient::search_channels(
     response.total_count = get_int(content, "size");
   }
   return response;
+}
+
+std::optional<VodListResponse> ChzzkClient::get_popular_vods(int size) {
+  const std::string url = std::string(kServiceBaseUrl) + "/v1/home/videos?size=" +
+                          std::to_string(size) + "&sortType=POPULAR";
+  auto payload = http_client_.get(url, {{"User-Agent", kDefaultUserAgent}});
+  if (!payload.has_value()) return std::nullopt;
+
+  const auto root = json::parse(*payload, nullptr, false);
+  if (root.is_discarded()) return std::nullopt;
+
+  const auto& content = unwrap_content(root);
+  if (!content.is_object() || !content.contains("data") || !content.at("data").is_array())
+    return std::nullopt;
+
+  VodListResponse response;
+  for (const auto& item : content.at("data")) {
+    VodInfo vod;
+    vod.video_no = get_int(item, "videoNo");
+    vod.video_id = get_string(item, "videoId");
+    vod.video_title = get_string(item, "videoTitle");
+    vod.thumbnail_image_url = get_string(item, "thumbnailImageUrl");
+    vod.duration = get_int(item, "duration");
+    vod.read_count = get_int(item, "readCount");
+    vod.video_category_value = get_string(item, "videoCategoryValue");
+    vod.publish_date = get_string(item, "publishDate");
+    if (item.contains("channel") && item.at("channel").is_object())
+      vod.channel = parse_channel(item.at("channel"));
+    response.data.push_back(std::move(vod));
+  }
+  return response;
+}
+
+std::optional<VodDetail> ChzzkClient::get_vod_detail(int video_no) {
+  const std::string url = std::string(kServiceBaseUrl) + "/v3/videos/" +
+                          std::to_string(video_no);
+  auto payload = http_client_.get(url, {{"User-Agent", kDefaultUserAgent}});
+  if (!payload.has_value()) return std::nullopt;
+
+  const auto root = json::parse(*payload, nullptr, false);
+  if (root.is_discarded()) return std::nullopt;
+
+  const auto& content = unwrap_content(root);
+  if (!content.is_object()) return std::nullopt;
+
+  VodDetail detail;
+  detail.video_no = get_int(content, "videoNo");
+  detail.video_id = get_string(content, "videoId");
+  detail.video_title = get_string(content, "videoTitle");
+  detail.in_key = get_string(content, "inKey");
+  detail.duration = get_int(content, "duration");
+  if (content.contains("channel") && content.at("channel").is_object())
+    detail.channel = parse_channel(content.at("channel"));
+  return detail;
+}
+
+std::optional<std::string> ChzzkClient::get_vod_playback_url(const VodDetail& vod) {
+  if (vod.video_id.empty() || vod.in_key.empty()) return std::nullopt;
+
+  const std::string url =
+      "https://apis.naver.com/neonplayer/vodplay/v2/playback/" + vod.video_id +
+      "?key=" + vod.in_key + "&sid=2099&devt=html5_pc&st=5&lc=ko_KR&cpl=ko_KR";
+  auto payload = http_client_.get(url, {{"User-Agent", kDefaultUserAgent}});
+  if (!payload.has_value()) return std::nullopt;
+
+  const auto root = json::parse(*payload, nullptr, false);
+  if (root.is_discarded()) return std::nullopt;
+
+  // period[0].adaptationSet[0].otherAttributes.m3u
+  if (!root.contains("period") || !root.at("period").is_array()) return std::nullopt;
+  for (const auto& period : root.at("period")) {
+    if (!period.contains("adaptationSet") || !period.at("adaptationSet").is_array()) continue;
+    for (const auto& as : period.at("adaptationSet")) {
+      if (!as.contains("otherAttributes")) continue;
+      const auto& attrs = as.at("otherAttributes");
+      std::string m3u = get_string(attrs, "m3u");
+      if (!m3u.empty()) return m3u;
+    }
+  }
+  return std::nullopt;
 }
 
 }  // namespace chzzk

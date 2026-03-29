@@ -12,7 +12,6 @@ class CategoryCell : public brls::RecyclerCell {
     static CategoryCell* create();
     void setData(const chzzk::CategoryInfo& info);
 
-  private:
     BRLS_BIND(brls::Label, nameLabel, "cat/name");
     BRLS_BIND(brls::Label, viewerLabel, "cat/viewers");
 };

@@ -2,17 +2,18 @@
     width="auto"
     height="auto"
     axis="column"
-    paddingTop="30"
-    paddingLeft="40"
-    paddingRight="40">
+    paddingTop="20"
+    paddingLeft="30"
+    paddingRight="30">
 
     <brls:Label
         id="live/status"
         width="auto"
         height="auto"
         text="@i18n/app/loading"
-        fontSize="18"
-        marginBottom="16" />
+        fontSize="20"
+        textColor="#E1E3DE"
+        marginBottom="12" />
 
     <brls:RecyclerFrame
         id="live/recycler"

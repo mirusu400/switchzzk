@@ -269,6 +269,23 @@ private:
             mpv_command(mpv_, cmd);
             paused = !paused;
             force_redraw = true;
+          } else if (event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT) {
+            const char* cmd[] = {"seek", "10", nullptr};
+            mpv_command(mpv_, cmd);
+          } else if (event.cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT) {
+            const char* cmd[] = {"seek", "-10", nullptr};
+            mpv_command(mpv_, cmd);
+          }
+        }
+
+        // Joy-Con HAT (D-pad) 시크
+        if (event.type == SDL_JOYHATMOTION) {
+          if (event.jhat.value & SDL_HAT_RIGHT) {
+            const char* cmd[] = {"seek", "10", nullptr};
+            mpv_command(mpv_, cmd);
+          } else if (event.jhat.value & SDL_HAT_LEFT) {
+            const char* cmd[] = {"seek", "-10", nullptr};
+            mpv_command(mpv_, cmd);
           }
         }
       }

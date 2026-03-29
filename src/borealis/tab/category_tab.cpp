@@ -55,9 +55,14 @@ int CategoryLiveDataSource::numberOfRows(brls::RecyclerFrame*, int) { return sta
 float CategoryLiveDataSource::heightForRow(brls::RecyclerFrame*, brls::IndexPath) { return 100; }
 
 brls::RecyclerCell* CategoryLiveDataSource::cellForRow(brls::RecyclerFrame* recycler, brls::IndexPath index) {
-    auto* cell = dynamic_cast<LiveCell*>(recycler->dequeueReusableCell("live_cell"));
-    if (!cell) cell = LiveCell::create();
-    cell->setData(lives_[index.row]);
+    auto* cell = dynamic_cast<CategoryCell*>(recycler->dequeueReusableCell("cat_cell"));
+    if (!cell) cell = CategoryCell::create();
+    // 라이브 정보를 카테고리 셀 형태로 표시
+    const auto& live = lives_[index.row];
+    if (cell->nameLabel)
+        cell->nameLabel->setText(live.channel.channel_name + " - " + live.live_title);
+    if (cell->viewerLabel)
+        cell->viewerLabel->setText(chzzk::format_viewer_count(live.concurrent_user_count) + "명");
     return cell;
 }
 
@@ -78,7 +83,6 @@ CategoryTab::CategoryTab() {
 
     if (this->recycler) {
         this->recycler->registerCell("cat_cell", []() { return CategoryCell::create(); });
-        this->recycler->registerCell("live_cell", []() { return LiveCell::create(); });
         this->recycler->setDataSource(catDataSource_);
     }
 

@@ -6,7 +6,7 @@
 #include "chzzk/http_client.hpp"
 #include "chzzk/models.hpp"
 
-// 채널 목록 셀
+// 개별 카드 셀
 class LiveCell : public brls::RecyclerCell {
   public:
     LiveCell();
@@ -15,21 +15,24 @@ class LiveCell : public brls::RecyclerCell {
     void setData(const chzzk::LiveInfo& info);
 
   private:
+    BRLS_BIND(brls::Image, thumbnail, "cell/thumbnail");
     BRLS_BIND(brls::Label, titleLabel, "cell/title");
     BRLS_BIND(brls::Label, channelLabel, "cell/channel");
     BRLS_BIND(brls::Label, viewerLabel, "cell/viewers");
     BRLS_BIND(brls::Label, categoryLabel, "cell/category");
 };
 
-class LiveTab;  // forward decl
+class LiveTab;
 
-// 채널 목록 데이터 소스
+// 데이터 소스
 class LiveDataSource : public brls::RecyclerDataSource {
   public:
     explicit LiveDataSource(LiveTab* tab) : tab_(tab) {}
 
     void setData(std::vector<chzzk::LiveInfo> lives);
+    void appendData(std::vector<chzzk::LiveInfo> lives);
     const chzzk::LiveInfo& getItem(int index) const;
+    int totalItems() const { return static_cast<int>(lives_.size()); }
 
     int numberOfSections(brls::RecyclerFrame* recycler) override;
     int numberOfRows(brls::RecyclerFrame* recycler, int section) override;
@@ -51,6 +54,7 @@ class LiveTab : public brls::Box {
     static brls::View* create() { return new LiveTab(); }
 
     void fetchLives();
+    void loadMore();
     void playChannel(const chzzk::LiveInfo& info);
 
   private:
@@ -61,4 +65,9 @@ class LiveTab : public brls::Box {
     chzzk::HttpsHttpClient* httpClient_ = nullptr;
     chzzk::ChzzkClient* chzzkClient_ = nullptr;
     bool lowLatency_ = false;
+
+    // 페이지네이션
+    std::optional<int> nextConcurrentUserCount_;
+    std::optional<std::int64_t> nextLiveId_;
+    bool loading_ = false;
 };

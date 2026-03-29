@@ -13,16 +13,16 @@
 
     <!-- 썸네일 -->
     <brls:Image
-        id="cell/thumbnail"
+        id="vod/thumbnail"
         width="auto"
         height="130"
         scalingType="fill"
         cornerRadius="8"
         marginBottom="10" />
 
-    <!-- 제목 (굵게, 흰색) -->
+    <!-- 제목 -->
     <brls:Label
-        id="cell/title"
+        id="vod/title"
         width="auto"
         height="auto"
         fontSize="15"
@@ -30,28 +30,28 @@
 
     <!-- 채널명 -->
     <brls:Label
-        id="cell/channel"
+        id="vod/channel"
         width="auto"
         height="auto"
         fontSize="12"
         textColor="#00FFA3"
         marginTop="4" />
 
-    <!-- 카테고리 + 시청자수 -->
+    <!-- 재생시간 + 조회수 -->
     <brls:Box width="auto" height="auto" axis="row" marginTop="4" justifyContent="spaceBetween">
         <brls:Label
-            id="cell/category"
+            id="vod/duration"
             width="auto"
             height="auto"
             fontSize="11"
             textColor="#707580" />
 
         <brls:Label
-            id="cell/viewers"
+            id="vod/views"
             width="auto"
             height="auto"
             fontSize="11"
-            textColor="#E02020" />
+            textColor="#707580" />
     </brls:Box>
 
 </brls:Box>

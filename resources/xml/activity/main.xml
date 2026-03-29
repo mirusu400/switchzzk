@@ -3,21 +3,25 @@
         title="Switchzzk"
         icon="@res/icon/icon.jpg">
 
-        <brls:Tab label="인기 라이브">
+        <brls:Tab label="● LIVE">
             <LiveTab />
         </brls:Tab>
 
-        <brls:Tab label="카테고리">
+        <brls:Tab label="■ Category">
             <CategoryTab />
         </brls:Tab>
 
-        <brls:Tab label="검색">
+        <brls:Tab label="◆ Search">
             <SearchTab />
+        </brls:Tab>
+
+        <brls:Tab label="▶ VOD">
+            <VodTab />
         </brls:Tab>
 
         <brls:Separator />
 
-        <brls:Tab label="설정">
+        <brls:Tab label="⚙ Settings">
             <brls:Box
                 width="auto"
                 height="auto"

@@ -1,26 +1,30 @@
 <brls:Box
     width="auto"
-    height="auto"
+    height="56"
     axis="row"
-    paddingTop="14"
-    paddingBottom="14"
+    paddingTop="10"
+    paddingBottom="10"
     paddingLeft="16"
     paddingRight="16"
     focusable="true"
-    cornerRadius="6"
-    justifyContent="spaceBetween">
+    cornerRadius="10"
+    backgroundColor="#1E2023"
+    marginBottom="6"
+    justifyContent="spaceBetween"
+    alignItems="center">
 
     <brls:Label
         id="cat/name"
         width="auto"
         height="auto"
-        fontSize="18" />
+        fontSize="16"
+        textColor="#FFFFFF" />
 
     <brls:Label
         id="cat/viewers"
         width="auto"
         height="auto"
-        fontSize="14"
-        textColor="#FF6B6B" />
+        fontSize="13"
+        textColor="#00FFA3" />
 
 </brls:Box>

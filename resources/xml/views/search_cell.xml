@@ -1,35 +1,38 @@
 <brls:Box
     width="auto"
-    height="auto"
+    height="66"
     axis="column"
-    paddingTop="12"
-    paddingBottom="12"
+    paddingTop="10"
+    paddingBottom="10"
     paddingLeft="16"
     paddingRight="16"
     focusable="true"
-    cornerRadius="6">
+    cornerRadius="10"
+    backgroundColor="#1E2023"
+    marginBottom="6">
 
-    <brls:Box width="auto" height="auto" axis="row" justifyContent="spaceBetween">
+    <brls:Box width="auto" height="auto" axis="row" justifyContent="spaceBetween" alignItems="center">
         <brls:Label
             id="search/channel"
             width="auto"
             height="auto"
-            fontSize="18" />
+            fontSize="16"
+            textColor="#FFFFFF" />
 
         <brls:Label
             id="search/status"
             width="auto"
             height="auto"
-            fontSize="14"
-            textColor="#4CAF50" />
+            fontSize="13"
+            textColor="#00FFA3" />
     </brls:Box>
 
     <brls:Label
         id="search/title"
         width="auto"
         height="auto"
-        fontSize="14"
-        textColor="#B0B0B0"
+        fontSize="12"
+        textColor="#707580"
         marginTop="4" />
 
 </brls:Box>

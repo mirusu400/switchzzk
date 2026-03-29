@@ -11,7 +11,9 @@
 #include "tab/live_tab.hpp"
 #include "tab/category_tab.hpp"
 #include "tab/search_tab.hpp"
+#include "tab/vod_tab.hpp"
 #include "chzzk/switch_player.hpp"
+#include "chzzk/image_loader.hpp"
 
 using namespace brls::literals;
 
@@ -40,22 +42,33 @@ static bool run_borealis_ui() {
     brls::Application::getPlatform()->setThemeVariant(brls::ThemeVariant::DARK);
     brls::Application::setGlobalQuit(false);
 
+    // 치지직 다크 테마 커스텀 컬러
+    brls::Theme::getDarkTheme().addColor("brls/sidebar/active_item", nvgRGB(0, 255, 163));
+
+    // 사이드바 (기본 410 → 200)
+    brls::getStyle().addMetric("brls/tab_frame/sidebar_width", 200);
+
     brls::Application::registerXMLView("LiveTab", LiveTab::create);
     brls::Application::registerXMLView("CategoryTab", CategoryTab::create);
     brls::Application::registerXMLView("SearchTab", SearchTab::create);
+    brls::Application::registerXMLView("VodTab", VodTab::create);
     brls::Application::pushActivity(new MainActivity());
+
+    chzzk::ImageLoader::instance().start();
 
     dbg("borealis: entering mainLoop");
     while (brls::Application::mainLoop()) {
     }
     dbg("borealis: mainLoop exited");
+
+    chzzk::ImageLoader::instance().stop();
     return true;
 }
 
 int main(int argc, char* argv[]) {
 #ifdef __SWITCH__
     g_logfile = fopen("sdmc:/switch/switchzzk.log", "w");
-    dbg("=== switch-chzzk borealis start ===");
+    dbg("=== switchzzk v20260330-fix3 ui-polish ===");
 #endif
 
     while (true) {

@@ -1,6 +1,12 @@
 #pragma once
 
+#include <atomic>
 #include <string>
+#include <vector>
+
+// VOD segment 스트리밍용 전역 변수
+extern std::vector<std::string> g_vod_segments;
+extern std::atomic<bool> g_vod_ready;
 
 namespace chzzk {
 

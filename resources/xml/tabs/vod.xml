@@ -2,21 +2,30 @@
     width="auto"
     height="auto"
     axis="column"
-    paddingTop="30"
-    paddingLeft="40"
-    paddingRight="40">
+    paddingTop="20"
+    paddingLeft="20"
+    paddingRight="20">
 
     <brls:Label
         id="vod/status"
         width="auto"
         height="auto"
         text="인기 VOD"
-        fontSize="18"
-        marginBottom="16" />
+        fontSize="20"
+        textColor="#E1E3DE"
+        marginBottom="12" />
 
-    <brls:RecyclerFrame
-        id="vod/recycler"
+    <brls:ScrollingFrame
+        id="vod/scroll"
         width="auto"
-        grow="1.0" />
+        grow="1.0">
+
+        <brls:Box
+            id="vod/grid"
+            width="auto"
+            height="auto"
+            axis="column" />
+
+    </brls:ScrollingFrame>
 
 </brls:Box>

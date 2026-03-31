@@ -1,75 +1,13 @@
 #include "tab/category_tab.hpp"
+#include "tab/live_tab.hpp"
 #include "chzzk/switch_player.hpp"
+#include "chzzk/image_loader.hpp"
 
 extern FILE* g_logfile;
 extern void dbg(const char* msg);
 extern chzzk::SwitchPlaybackRequest g_pending_playback;
 extern bool g_has_pending_playback;
 
-// ─── CategoryCell ───
-
-CategoryCell::CategoryCell() {
-    dbg("CategoryCell: inflating");
-    this->inflateFromXMLRes("xml/views/category_cell.xml");
-    dbg("CategoryCell: inflated ok");
-}
-CategoryCell* CategoryCell::create() { return new CategoryCell(); }
-
-void CategoryCell::setData(const chzzk::CategoryInfo& info) {
-    if (this->nameLabel) this->nameLabel->setText(info.category_value);
-    if (this->viewerLabel)
-        this->viewerLabel->setText(chzzk::format_viewer_count(info.concurrent_user_count) + "명");
-}
-
-// ─── CategoryDataSource ───
-
-void CategoryDataSource::setData(std::vector<chzzk::CategoryInfo> cats) { cats_ = std::move(cats); }
-int CategoryDataSource::numberOfSections(brls::RecyclerFrame*) { return 1; }
-int CategoryDataSource::numberOfRows(brls::RecyclerFrame*, int) { return static_cast<int>(cats_.size()); }
-float CategoryDataSource::heightForRow(brls::RecyclerFrame*, brls::IndexPath) { return 60; }
-
-brls::RecyclerCell* CategoryDataSource::cellForRow(brls::RecyclerFrame* recycler, brls::IndexPath index) {
-    dbg("CategoryDS: cellForRow");
-    auto* cell = dynamic_cast<CategoryCell*>(recycler->dequeueReusableCell("cat_cell"));
-    if (!cell) {
-        dbg("CategoryDS: creating new cell");
-        cell = CategoryCell::create();
-    }
-    dbg("CategoryDS: setData");
-    cell->setData(cats_[index.row]);
-    dbg("CategoryDS: cellForRow done");
-    return cell;
-}
-
-void CategoryDataSource::didSelectRowAt(brls::RecyclerFrame*, brls::IndexPath index) {
-    if (tab_ && index.row >= 0 && index.row < static_cast<int>(cats_.size()))
-        tab_->openCategory(cats_[index.row]);
-}
-
-// ─── CategoryLiveDataSource ───
-
-void CategoryLiveDataSource::setData(std::vector<chzzk::LiveInfo> lives) { lives_ = std::move(lives); }
-const chzzk::LiveInfo& CategoryLiveDataSource::getItem(int index) const { return lives_.at(index); }
-int CategoryLiveDataSource::numberOfSections(brls::RecyclerFrame*) { return 1; }
-int CategoryLiveDataSource::numberOfRows(brls::RecyclerFrame*, int) { return static_cast<int>(lives_.size()); }
-float CategoryLiveDataSource::heightForRow(brls::RecyclerFrame*, brls::IndexPath) { return 100; }
-
-brls::RecyclerCell* CategoryLiveDataSource::cellForRow(brls::RecyclerFrame* recycler, brls::IndexPath index) {
-    auto* cell = dynamic_cast<CategoryCell*>(recycler->dequeueReusableCell("cat_cell"));
-    if (!cell) cell = CategoryCell::create();
-    // 라이브 정보를 카테고리 셀 형태로 표시
-    const auto& live = lives_[index.row];
-    if (cell->nameLabel)
-        cell->nameLabel->setText(live.channel.channel_name + " - " + live.live_title);
-    if (cell->viewerLabel)
-        cell->viewerLabel->setText(chzzk::format_viewer_count(live.concurrent_user_count) + "명");
-    return cell;
-}
-
-void CategoryLiveDataSource::didSelectRowAt(brls::RecyclerFrame*, brls::IndexPath index) {
-    if (tab_ && index.row >= 0 && index.row < static_cast<int>(lives_.size()))
-        tab_->playChannel(lives_[index.row]);
-}
 
 // ─── CategoryTab ───
 
@@ -78,33 +16,20 @@ CategoryTab::CategoryTab() {
 
     httpClient_ = new chzzk::HttpsHttpClient();
     chzzkClient_ = new chzzk::ChzzkClient(*httpClient_);
-    catDataSource_ = new CategoryDataSource(this);
-    liveDataSource_ = new CategoryLiveDataSource(this);
 
-    if (this->recycler) {
-        this->recycler->registerCell("cat_cell", []() { return CategoryCell::create(); });
-        this->recycler->setDataSource(catDataSource_);
-    }
-
-    // X: 새로고침
     this->registerAction("새로고침", brls::ControllerButton::BUTTON_X, [this](brls::View*) {
-        if (showingLives_)
-            goBackToCategories();
-        else
-            fetchCategories();
+        if (showingLives_) goBackToCategories();
+        else fetchCategories();
         return true;
     });
 
-    // B: 라이브 목록에서 카테고리 목록으로 복귀
     this->registerAction("뒤로", brls::ControllerButton::BUTTON_B, [this](brls::View*) {
-        if (showingLives_) {
-            goBackToCategories();
-            return true;
-        }
-        return false;  // 기본 동작 (탭 전환)
+        if (showingLives_) { goBackToCategories(); return true; }
+        return false;
     });
 
-    dbg("CategoryTab: constructor done");
+    dbg("CategoryTab: auto-fetching");
+    this->fetchCategories();
 }
 
 CategoryTab::~CategoryTab() {
@@ -112,34 +37,81 @@ CategoryTab::~CategoryTab() {
     delete httpClient_;
 }
 
+void CategoryTab::buildCategoryList() {
+    if (!this->gridBox) return;
+    this->gridBox->clearViews();
+
+    for (size_t i = 0; i < categories_.size(); i++) {
+        auto* item = new brls::Box(brls::Axis::ROW);
+        item->setMarginBottom(6);
+        item->setPadding(10, 16, 10, 16);
+        item->setCornerRadius(10);
+        item->setBackgroundColor(nvgRGBA(30, 32, 35, 255));
+        item->setFocusable(true);
+        item->setAlignItems(brls::AlignItems::CENTER);
+        item->setJustifyContent(brls::JustifyContent::SPACE_BETWEEN);
+
+        auto* name = new brls::Label();
+        name->setText(categories_[i].category_value);
+        name->setFontSize(16);
+        name->setTextColor(nvgRGBA(255, 255, 255, 255));
+
+        auto* viewers = new brls::Label();
+        viewers->setText(chzzk::format_viewer_count(categories_[i].concurrent_user_count) + "명");
+        viewers->setFontSize(13);
+        viewers->setTextColor(nvgRGBA(0, 255, 163, 255));
+
+        item->addView(name);
+        item->addView(viewers);
+
+        size_t idx = i;
+        item->registerClickAction([this, idx](brls::View*) {
+            this->openCategory(categories_[idx]); return true;
+        });
+        item->addGestureRecognizer(new brls::TapGestureRecognizer(item));
+
+        this->gridBox->addView(item);
+    }
+}
+
+void CategoryTab::buildLiveGrid() {
+    if (!this->gridBox) return;
+    this->gridBox->clearViews();
+
+    for (size_t i = 0; i < categoryLives_.size(); i += GRID_COLS) {
+        auto* row = new brls::Box(brls::Axis::ROW);
+        row->setMarginBottom(8);
+
+        for (size_t j = i; j < i + GRID_COLS && j < categoryLives_.size(); j++) {
+            auto* card = new LiveCard();
+            card->setData(categoryLives_[j]);
+            size_t idx = j;
+            card->registerClickAction([this, idx](brls::View*) {
+                this->playChannel(categoryLives_[idx]); return true;
+            });
+            card->addGestureRecognizer(new brls::TapGestureRecognizer(card));
+            row->addView(card);
+        }
+
+        this->gridBox->addView(row);
+    }
+}
+
 void CategoryTab::fetchCategories() {
-    dbg("CategoryTab: fetchCategories begin");
+    dbg("CategoryTab: fetchCategories");
     if (this->statusLabel) this->statusLabel->setText("카테고리 로딩 중...");
 
-    dbg("CategoryTab: calling API");
     auto result = chzzkClient_->get_live_categories(30);
-    dbg("CategoryTab: API returned");
-
     if (!result || result->data.empty()) {
-        dbg("CategoryTab: no data");
         if (this->statusLabel) this->statusLabel->setText("카테고리를 불러올 수 없습니다");
         return;
     }
 
-    if (g_logfile) { fprintf(g_logfile, "CategoryTab: got %zu categories\n", result->data.size()); fflush(g_logfile); }
-
-    catDataSource_->setData(std::move(result->data));
-    dbg("CategoryTab: setData done");
-
-    if (this->recycler) {
-        dbg("CategoryTab: reloadData");
-        this->recycler->reloadData();
-        dbg("CategoryTab: reloadData done");
-    }
+    categories_ = std::move(result->data);
     showingLives_ = false;
+    this->buildCategoryList();
     if (this->statusLabel)
-        this->statusLabel->setText("카테고리 " + std::to_string(catDataSource_->numberOfRows(nullptr, 0)) + "개");
-    dbg("CategoryTab: fetchCategories done");
+        this->statusLabel->setText("카테고리 " + std::to_string(categories_.size()) + "개");
 }
 
 void CategoryTab::openCategory(const chzzk::CategoryInfo& cat) {
@@ -152,47 +124,33 @@ void CategoryTab::openCategory(const chzzk::CategoryInfo& cat) {
         return;
     }
 
-    int count = static_cast<int>(result->data.size());
-    liveDataSource_->setData(std::move(result->data));
-    if (this->recycler) {
-        this->recycler->setDataSource(liveDataSource_);
-        this->recycler->reloadData();
-    }
+    categoryLives_ = std::move(result->data);
     showingLives_ = true;
+    this->buildLiveGrid();
     if (this->statusLabel)
-        this->statusLabel->setText(cat.category_value + " " + std::to_string(count) + "개 라이브  (B: 뒤로)");
+        this->statusLabel->setText(cat.category_value + " " + std::to_string(categoryLives_.size()) + "개 라이브  (B: 뒤로)");
 }
 
 void CategoryTab::playChannel(const chzzk::LiveInfo& info) {
     dbg("CategoryTab: playChannel");
-    if (this->statusLabel)
-        this->statusLabel->setText("스트림 해석 중: " + info.channel.channel_name);
+    if (this->statusLabel) this->statusLabel->setText("스트림 해석 중: " + info.channel.channel_name);
 
     auto detail = chzzkClient_->get_live_detail(info.channel.channel_id);
-    if (!detail) {
-        if (this->statusLabel) this->statusLabel->setText("라이브 상세 조회 실패");
-        return;
-    }
+    if (!detail) { if (this->statusLabel) this->statusLabel->setText("라이브 상세 조회 실패"); return; }
 
     chzzk::PlaybackPreference pref{false, 720};
     auto resolved = chzzkClient_->resolve_playback(*detail, pref);
-    if (!resolved || resolved->selected_url.empty()) {
-        if (this->statusLabel) this->statusLabel->setText("스트림 URL 해석 실패");
-        return;
-    }
+    if (!resolved || resolved->selected_url.empty()) { if (this->statusLabel) this->statusLabel->setText("스트림 URL 해석 실패"); return; }
 
     std::string referer;
     auto pos = resolved->selected_url.find("://");
     if (pos != std::string::npos) {
         auto slash = resolved->selected_url.find('/', pos + 3);
-        if (slash != std::string::npos)
-            referer = resolved->selected_url.substr(0, slash + 1);
+        if (slash != std::string::npos) referer = resolved->selected_url.substr(0, slash + 1);
     }
 
     g_pending_playback = chzzk::SwitchPlaybackRequest{
-        .title = detail->live_title,
-        .url = resolved->selected_url,
-        .referer = referer,
+        .title = detail->live_title, .url = resolved->selected_url, .referer = referer,
         .http_header_fields = "Accept: */*,Accept-Encoding: identity,Connection: close,Cache-Control: no-cache",
     };
     g_has_pending_playback = true;
@@ -201,10 +159,7 @@ void CategoryTab::playChannel(const chzzk::LiveInfo& info) {
 
 void CategoryTab::goBackToCategories() {
     showingLives_ = false;
-    if (this->recycler) {
-        this->recycler->setDataSource(catDataSource_);
-        this->recycler->reloadData();
-    }
+    this->buildCategoryList();
     if (this->statusLabel)
-        this->statusLabel->setText("카테고리 " + std::to_string(catDataSource_->numberOfRows(nullptr, 0)) + "개");
+        this->statusLabel->setText("카테고리 " + std::to_string(categories_.size()) + "개");
 }

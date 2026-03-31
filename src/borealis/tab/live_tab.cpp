@@ -16,66 +16,41 @@ static void dbgstr(const char* prefix, const std::string& s) {
 extern chzzk::SwitchPlaybackRequest g_pending_playback;
 extern bool g_has_pending_playback;
 
-// ─── LiveCell ───
+// ─── LiveCard ───
 
-LiveCell::LiveCell() {
-    this->inflateFromXMLRes("xml/views/live_cell.xml");
+LiveCard::LiveCard() {
+    this->inflateFromXMLRes("xml/views/live_card.xml");
 }
 
-LiveCell* LiveCell::create() { return new LiveCell(); }
-
-void LiveCell::setData(const chzzk::LiveInfo& info) {
-    if (this->channelLabel)
-        this->channelLabel->setText(info.channel.channel_name);
-    if (this->titleLabel)
-        this->titleLabel->setText(info.live_title);
-    if (this->viewerLabel)
-        this->viewerLabel->setText(chzzk::format_viewer_count(info.concurrent_user_count) + "명");
-    if (this->categoryLabel)
-        this->categoryLabel->setText(info.live_category_value);
-
+void LiveCard::setData(const chzzk::LiveInfo& info) {
+    if (this->channelLabel) this->channelLabel->setText(info.channel.channel_name);
+    if (this->titleLabel) this->titleLabel->setText(info.live_title);
+    if (this->viewerLabel) this->viewerLabel->setText(chzzk::format_viewer_count(info.concurrent_user_count) + "명");
+    if (this->categoryLabel) this->categoryLabel->setText(info.live_category_value);
     if (this->thumbnail && !info.live_image_url.empty()) {
         std::string url = info.live_image_url;
         auto pos = url.find("{type}");
-        if (pos != std::string::npos)
-            url.replace(pos, 6, "480");
+        if (pos != std::string::npos) url.replace(pos, 6, "480");
         chzzk::ImageLoader::instance().load(url, this->thumbnail);
     }
 }
 
-// ─── LiveDataSource ───
+// ─── LiveCell (1열 리스트용) ───
 
-void LiveDataSource::setData(std::vector<chzzk::LiveInfo> lives) {
-    lives_ = std::move(lives);
-}
+LiveCell::LiveCell() { this->inflateFromXMLRes("xml/views/live_cell.xml"); }
+LiveCell* LiveCell::create() { return new LiveCell(); }
 
-void LiveDataSource::appendData(std::vector<chzzk::LiveInfo> lives) {
-    lives_.insert(lives_.end(),
-                  std::make_move_iterator(lives.begin()),
-                  std::make_move_iterator(lives.end()));
-}
-
-const chzzk::LiveInfo& LiveDataSource::getItem(int index) const {
-    return lives_.at(index);
-}
-
-int LiveDataSource::numberOfSections(brls::RecyclerFrame*) { return 1; }
-int LiveDataSource::numberOfRows(brls::RecyclerFrame*, int) { return static_cast<int>(lives_.size()); }
-float LiveDataSource::heightForRow(brls::RecyclerFrame*, brls::IndexPath) { return 210; }
-
-brls::RecyclerCell* LiveDataSource::cellForRow(brls::RecyclerFrame* recycler, brls::IndexPath index) {
-    LiveCell* cell = dynamic_cast<LiveCell*>(recycler->dequeueReusableCell("live_cell"));
-    if (!cell) cell = LiveCell::create();
-    cell->setData(lives_[index.row]);
-
-    // 페이지네이션은 R버튼으로 수동 트리거 (reloadData 중 reloadData 방지)
-
-    return cell;
-}
-
-void LiveDataSource::didSelectRowAt(brls::RecyclerFrame*, brls::IndexPath index) {
-    if (tab_ && index.row >= 0 && index.row < static_cast<int>(lives_.size()))
-        tab_->playChannel(lives_[index.row]);
+void LiveCell::setData(const chzzk::LiveInfo& info) {
+    if (this->channelLabel) this->channelLabel->setText(info.channel.channel_name);
+    if (this->titleLabel) this->titleLabel->setText(info.live_title);
+    if (this->viewerLabel) this->viewerLabel->setText(chzzk::format_viewer_count(info.concurrent_user_count) + "명");
+    if (this->categoryLabel) this->categoryLabel->setText(info.live_category_value);
+    if (this->thumbnail && !info.live_image_url.empty()) {
+        std::string url = info.live_image_url;
+        auto pos = url.find("{type}");
+        if (pos != std::string::npos) url.replace(pos, 6, "480");
+        chzzk::ImageLoader::instance().load(url, this->thumbnail);
+    }
 }
 
 // ─── LiveTab ───
@@ -86,34 +61,18 @@ LiveTab::LiveTab() {
 
     httpClient_ = new chzzk::HttpsHttpClient();
     chzzkClient_ = new chzzk::ChzzkClient(*httpClient_);
-    dataSource_ = new LiveDataSource(this);
     dbg("LiveTab: clients created");
 
-    if (this->recycler) {
-        dbg("LiveTab: recycler bound ok");
-        this->recycler->registerCell("live_cell", []() { return LiveCell::create(); });
-        this->recycler->setDataSource(dataSource_);
-    } else {
-        dbg("LiveTab: recycler bind FAILED");
-    }
-
-    if (this->statusLabel) dbg("LiveTab: statusLabel bound ok");
-
     this->registerAction("새로고침", brls::ControllerButton::BUTTON_X, [this](brls::View*) {
-        this->fetchLives();
-        return true;
+        this->fetchLives(); return true;
     });
-
-    // R: 더 보기
     this->registerAction("더 보기", brls::ControllerButton::BUTTON_RB, [this](brls::View*) {
-        this->loadMore();
-        return true;
+        this->loadMore(); return true;
     });
-
     this->registerAction("저지연", brls::ControllerButton::BUTTON_Y, [this](brls::View*) {
         lowLatency_ = !lowLatency_;
         if (this->statusLabel)
-            this->statusLabel->setText("LIVE " + std::to_string(dataSource_->totalItems()) + "개" +
+            this->statusLabel->setText("LIVE " + std::to_string(lives_.size()) + "개" +
                                         (lowLatency_ ? " [LL-HLS]" : ""));
         return true;
     });
@@ -125,6 +84,37 @@ LiveTab::LiveTab() {
 LiveTab::~LiveTab() {
     delete chzzkClient_;
     delete httpClient_;
+}
+
+void LiveTab::buildGrid() {
+    if (!this->gridBox) return;
+
+    dbg("buildGrid begin");
+    this->gridBox->clearViews();
+
+    for (size_t i = 0; i < lives_.size(); i += GRID_COLS) {
+        // 한 행 = 가로 Box
+        auto* row = new brls::Box(brls::Axis::ROW);
+        row->setMarginBottom(8);
+
+        for (size_t j = i; j < i + GRID_COLS && j < lives_.size(); j++) {
+            auto* card = new LiveCard();
+            card->setData(lives_[j]);
+
+            // 카드 클릭 → 재생
+            size_t idx = j;
+            card->registerClickAction([this, idx](brls::View*) {
+                this->playChannel(lives_[idx]);
+                return true;
+            });
+            card->addGestureRecognizer(new brls::TapGestureRecognizer(card));
+
+            row->addView(card);
+        }
+
+        this->gridBox->addView(row);
+    }
+    dbg("buildGrid done");
 }
 
 void LiveTab::fetchLives() {
@@ -145,11 +135,11 @@ void LiveTab::fetchLives() {
 
     if (g_logfile) { fprintf(g_logfile, "fetchLives: got %zu lives\n", result->data.size()); fflush(g_logfile); }
 
-    dataSource_->setData(std::move(result->data));
-    if (this->recycler) this->recycler->reloadData();
+    lives_ = std::move(result->data);
+    this->buildGrid();
 
     if (this->statusLabel)
-        this->statusLabel->setText("LIVE " + std::to_string(dataSource_->totalItems()) + "개" +
+        this->statusLabel->setText("LIVE " + std::to_string(lives_.size()) + "개" +
                                     (lowLatency_ ? " [LL-HLS]" : ""));
     loading_ = false;
     dbg("fetchLives done");
@@ -161,55 +151,41 @@ void LiveTab::loadMore() {
     dbg("loadMore begin");
 
     auto result = chzzkClient_->get_popular_lives(20, nextConcurrentUserCount_, nextLiveId_);
-    if (!result || result->data.empty()) {
-        loading_ = false;
-        return;
-    }
+    if (!result || result->data.empty()) { loading_ = false; return; }
 
     nextConcurrentUserCount_ = result->next_concurrent_user_count;
     nextLiveId_ = result->next_live_id;
 
-    if (g_logfile) { fprintf(g_logfile, "loadMore: got %zu more, total %d\n", result->data.size(), dataSource_->totalItems() + (int)result->data.size()); fflush(g_logfile); }
-
-    dataSource_->appendData(std::move(result->data));
-    if (this->recycler) this->recycler->reloadData();
+    lives_.insert(lives_.end(), std::make_move_iterator(result->data.begin()),
+                  std::make_move_iterator(result->data.end()));
+    this->buildGrid();
 
     if (this->statusLabel)
-        this->statusLabel->setText("LIVE " + std::to_string(dataSource_->totalItems()) + "개" +
+        this->statusLabel->setText("LIVE " + std::to_string(lives_.size()) + "개" +
                                     (lowLatency_ ? " [LL-HLS]" : ""));
     loading_ = false;
 }
 
 void LiveTab::playChannel(const chzzk::LiveInfo& info) {
     dbgstr("playChannel", info.channel.channel_name);
-    if (this->statusLabel)
-        this->statusLabel->setText("스트림 해석 중: " + info.channel.channel_name);
+    if (this->statusLabel) this->statusLabel->setText("스트림 해석 중: " + info.channel.channel_name);
 
     auto detail = chzzkClient_->get_live_detail(info.channel.channel_id);
-    if (!detail) {
-        if (this->statusLabel) this->statusLabel->setText("라이브 상세 조회 실패");
-        return;
-    }
+    if (!detail) { if (this->statusLabel) this->statusLabel->setText("라이브 상세 조회 실패"); return; }
 
     chzzk::PlaybackPreference pref{lowLatency_, 720};
     auto resolved = chzzkClient_->resolve_playback(*detail, pref);
-    if (!resolved || resolved->selected_url.empty()) {
-        if (this->statusLabel) this->statusLabel->setText("스트림 URL 해석 실패");
-        return;
-    }
+    if (!resolved || resolved->selected_url.empty()) { if (this->statusLabel) this->statusLabel->setText("스트림 URL 해석 실패"); return; }
 
     std::string referer;
     auto pos = resolved->selected_url.find("://");
     if (pos != std::string::npos) {
         auto slash = resolved->selected_url.find('/', pos + 3);
-        if (slash != std::string::npos)
-            referer = resolved->selected_url.substr(0, slash + 1);
+        if (slash != std::string::npos) referer = resolved->selected_url.substr(0, slash + 1);
     }
 
     g_pending_playback = chzzk::SwitchPlaybackRequest{
-        .title = detail->live_title,
-        .url = resolved->selected_url,
-        .referer = referer,
+        .title = detail->live_title, .url = resolved->selected_url, .referer = referer,
         .http_header_fields = "Accept: */*,Accept-Encoding: identity,Connection: close,Cache-Control: no-cache",
     };
     g_has_pending_playback = true;

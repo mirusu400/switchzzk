@@ -6,12 +6,15 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
+#include <atomic>
+#include <vector>
 
 #include "activity/main_activity.hpp"
 #include "tab/live_tab.hpp"
 #include "tab/category_tab.hpp"
 #include "tab/search_tab.hpp"
 #include "tab/vod_tab.hpp"
+#include "tab/following_tab.hpp"
 #include "chzzk/switch_player.hpp"
 #include "chzzk/image_loader.hpp"
 
@@ -20,6 +23,10 @@ using namespace brls::literals;
 FILE* g_logfile = nullptr;
 chzzk::SwitchPlaybackRequest g_pending_playback;
 bool g_has_pending_playback = false;
+std::string g_nid_aut;
+std::string g_nid_ses;
+std::vector<std::string> g_vod_segments;
+std::atomic<bool> g_vod_ready{false};
 
 void dbg(const char* msg) {
     if (!g_logfile) return;
@@ -45,13 +52,14 @@ static bool run_borealis_ui() {
     // 치지직 다크 테마 커스텀 컬러
     brls::Theme::getDarkTheme().addColor("brls/sidebar/active_item", nvgRGB(0, 255, 163));
 
-    // 사이드바 (기본 410 → 200)
-    brls::getStyle().addMetric("brls/tab_frame/sidebar_width", 200);
+    // 사이드바 아이콘 + 짧은 라벨 (기본 410 → 160)
+    brls::getStyle().addMetric("brls/tab_frame/sidebar_width", 160);
 
     brls::Application::registerXMLView("LiveTab", LiveTab::create);
     brls::Application::registerXMLView("CategoryTab", CategoryTab::create);
     brls::Application::registerXMLView("SearchTab", SearchTab::create);
     brls::Application::registerXMLView("VodTab", VodTab::create);
+    brls::Application::registerXMLView("FollowingTab", FollowingTab::create);
     brls::Application::pushActivity(new MainActivity());
 
     chzzk::ImageLoader::instance().start();
@@ -68,8 +76,28 @@ static bool run_borealis_ui() {
 int main(int argc, char* argv[]) {
 #ifdef __SWITCH__
     g_logfile = fopen("sdmc:/switch/switchzzk.log", "w");
-    dbg("=== switchzzk v20260330-fix3 ui-polish ===");
+    dbg("=== switchzzk v20260330-fix5 icon-only+autoload+search ===");
 #endif
+
+    // 저장된 인증 쿠키 로드
+    {
+        FILE* f = fopen("sdmc:/switch/switchzzk_auth.txt", "r");
+        if (f) {
+            char buf[1024];
+            if (fgets(buf, sizeof(buf), f)) {
+                g_nid_aut = buf;
+                while (!g_nid_aut.empty() && (g_nid_aut.back() == '\n' || g_nid_aut.back() == '\r'))
+                    g_nid_aut.pop_back();
+            }
+            if (fgets(buf, sizeof(buf), f)) {
+                g_nid_ses = buf;
+                while (!g_nid_ses.empty() && (g_nid_ses.back() == '\n' || g_nid_ses.back() == '\r'))
+                    g_nid_ses.pop_back();
+            }
+            fclose(f);
+            if (!g_nid_aut.empty()) dbg("auth: loaded saved cookies");
+        }
+    }
 
     while (true) {
         // 1. Borealis UI 실행

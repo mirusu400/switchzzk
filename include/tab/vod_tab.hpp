@@ -4,11 +4,11 @@
 #include "chzzk/chzzk_client.hpp"
 #include "chzzk/http_client.hpp"
 #include "chzzk/models.hpp"
+#include "tab/live_tab.hpp"
 
-class VodCell : public brls::RecyclerCell {
+class VodCard : public brls::Box {
   public:
-    VodCell();
-    static VodCell* create();
+    VodCard();
     void setData(const chzzk::VodInfo& info);
 
   private:
@@ -19,25 +19,6 @@ class VodCell : public brls::RecyclerCell {
     BRLS_BIND(brls::Label, viewsLabel, "vod/views");
 };
 
-class VodTab;
-
-class VodDataSource : public brls::RecyclerDataSource {
-  public:
-    explicit VodDataSource(VodTab* tab) : tab_(tab) {}
-    void setData(std::vector<chzzk::VodInfo> vods);
-    const chzzk::VodInfo& getItem(int index) const;
-
-    int numberOfSections(brls::RecyclerFrame* recycler) override;
-    int numberOfRows(brls::RecyclerFrame* recycler, int section) override;
-    brls::RecyclerCell* cellForRow(brls::RecyclerFrame* recycler, brls::IndexPath index) override;
-    void didSelectRowAt(brls::RecyclerFrame* recycler, brls::IndexPath index) override;
-    float heightForRow(brls::RecyclerFrame* recycler, brls::IndexPath index) override;
-
-  private:
-    std::vector<chzzk::VodInfo> vods_;
-    VodTab* tab_;
-};
-
 class VodTab : public brls::Box {
   public:
     VodTab();
@@ -46,13 +27,15 @@ class VodTab : public brls::Box {
 
     void fetchVods();
     void playVod(const chzzk::VodInfo& info);
-    chzzk::HttpClient* getHttpClient() { return httpClient_; }
 
   private:
-    BRLS_BIND(brls::Label, statusLabel, "vod/status");
-    BRLS_BIND(brls::RecyclerFrame, recycler, "vod/recycler");
+    void buildGrid();
 
-    VodDataSource* dataSource_ = nullptr;
+    BRLS_BIND(brls::Label, statusLabel, "vod/status");
+    BRLS_BIND(brls::ScrollingFrame, scrollFrame, "vod/scroll");
+    BRLS_BIND(brls::Box, gridBox, "vod/grid");
+
+    std::vector<chzzk::VodInfo> vods_;
     chzzk::HttpsHttpClient* httpClient_ = nullptr;
     chzzk::ChzzkClient* chzzkClient_ = nullptr;
 };

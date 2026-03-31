@@ -25,7 +25,13 @@ public:
                                                       int size = 20);
   std::optional<SearchChannelResponse> search_channels(const std::string& keyword,
                                                         int size = 20, int offset = 0);
+  std::optional<LiveListResponse> search_lives(const std::string& keyword,
+                                                int size = 20, int offset = 0);
+  std::optional<ResolvedPlayback> resolve_playback_from_media(
+      const std::vector<Media>& media_list,
+      const PlaybackPreference& preference);
   std::optional<VodListResponse> get_popular_vods(int size = 20);
+  std::optional<LiveListResponse> get_following_lives();
   std::optional<VodDetail> get_vod_detail(int video_no);
   std::optional<std::string> get_vod_playback_url(const VodDetail& vod);
 

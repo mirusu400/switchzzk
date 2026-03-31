@@ -301,11 +301,19 @@ std::optional<LiveListResponse> ChzzkClient::get_category_lives(
 
 std::optional<SearchChannelResponse> ChzzkClient::search_channels(
     const std::string& keyword, int size, int offset) {
-  // URL-encode keyword (minimal: spaces → +)
+  // URL-encode keyword
   std::string encoded;
-  for (char c : keyword) {
-    if (c == ' ') encoded += '+';
-    else encoded += c;
+  for (unsigned char c : keyword) {
+    if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+        (c >= '0' && c <= '9') || c == '-' || c == '_' || c == '.' || c == '~') {
+      encoded += static_cast<char>(c);
+    } else if (c == ' ') {
+      encoded += '+';
+    } else {
+      char hex[4];
+      snprintf(hex, sizeof(hex), "%%%02X", c);
+      encoded += hex;
+    }
   }
   const std::string url = std::string(kServiceBaseUrl) + "/v1/search/channels?keyword=" +
                           encoded + "&size=" + std::to_string(size) +
@@ -337,6 +345,109 @@ std::optional<SearchChannelResponse> ChzzkClient::search_channels(
   }
   if (content.contains("size")) {
     response.total_count = get_int(content, "size");
+  }
+  return response;
+}
+
+std::optional<LiveListResponse> ChzzkClient::search_lives(
+    const std::string& keyword, int size, int offset) {
+  std::string encoded;
+  for (unsigned char c : keyword) {
+    if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+        (c >= '0' && c <= '9') || c == '-' || c == '_' || c == '.' || c == '~')
+      encoded += static_cast<char>(c);
+    else if (c == ' ')
+      encoded += '+';
+    else {
+      char hex[4]; snprintf(hex, sizeof(hex), "%%%02X", c); encoded += hex;
+    }
+  }
+  const std::string url = std::string(kServiceBaseUrl) + "/v1/search/lives?keyword=" +
+                          encoded + "&size=" + std::to_string(size) +
+                          "&offset=" + std::to_string(offset);
+  auto payload = http_client_.get(url, {{"User-Agent", kDefaultUserAgent}});
+  if (!payload.has_value()) return std::nullopt;
+
+  const auto root = json::parse(*payload, nullptr, false);
+  if (root.is_discarded()) return std::nullopt;
+
+  const auto& content = unwrap_content(root);
+  if (!content.is_object() || !content.contains("data") || !content.at("data").is_array())
+    return std::nullopt;
+
+  LiveListResponse response;
+  for (const auto& item : content.at("data")) {
+    LiveInfo info;
+    if (item.contains("live") && item.at("live").is_object()) {
+      const auto& live = item.at("live");
+      info.live_id = get_i64(live, "liveId");
+      info.live_title = get_string(live, "liveTitle");
+      info.live_image_url = get_string(live, "liveImageUrl");
+      info.concurrent_user_count = get_int(live, "concurrentUserCount", 0);
+      info.live_category = get_string(live, "liveCategory");
+      info.live_category_value = get_string(live, "liveCategoryValue");
+    }
+    if (item.contains("channel") && item.at("channel").is_object()) {
+      info.channel = parse_channel(item.at("channel"));
+    }
+    if (!info.channel.channel_id.empty())
+      response.data.push_back(std::move(info));
+  }
+  return response;
+}
+
+std::optional<ResolvedPlayback> ChzzkClient::resolve_playback_from_media(
+    const std::vector<Media>& media_list,
+    const PlaybackPreference& preference) {
+  auto media = choose_media(media_list, preference.prefer_low_latency);
+  if (!media.has_value() || media->path.empty()) return std::nullopt;
+
+  ResolvedPlayback resolved;
+  resolved.master_url = media->path;
+  resolved.selected_url = media->path;
+  resolved.media_id = media->media_id;
+
+  auto playlist = http_client_.get(media->path, {{"User-Agent", kDefaultUserAgent}});
+  if (!playlist.has_value()) return resolved;
+
+  const auto variants = parse_variant_playlist(*playlist, media->path);
+  const auto selected = choose_variant(variants, preference.max_height);
+  if (selected.has_value()) {
+    resolved.selected_url = selected->uri;
+    resolved.resolution = selected->resolution;
+  }
+  return resolved;
+}
+
+std::optional<LiveListResponse> ChzzkClient::get_following_lives() {
+  const std::string url = std::string(kServiceBaseUrl) + "/v1/channels/following-lives?sortType=POPULAR";
+  auto payload = http_client_.get(url, {{"User-Agent", kDefaultUserAgent}});
+  if (!payload.has_value()) return std::nullopt;
+
+  const auto root = json::parse(*payload, nullptr, false);
+  if (root.is_discarded()) return std::nullopt;
+
+  const auto& content = unwrap_content(root);
+  if (!content.is_object()) return std::nullopt;
+
+  // following-lives returns { followingList: [ { ... } ] }
+  LiveListResponse response;
+  const auto& list_key = content.contains("followingList") ? "followingList" : "data";
+  if (!content.contains(list_key) || !content.at(list_key).is_array())
+    return std::nullopt;
+
+  for (const auto& item : content.at(list_key)) {
+    LiveInfo info;
+    info.live_id = get_i64(item, "liveId");
+    info.live_title = get_string(item, "liveTitle");
+    info.live_image_url = get_string(item, "liveImageUrl");
+    info.concurrent_user_count = get_int(item, "concurrentUserCount", 0);
+    info.live_category = get_string(item, "liveCategory");
+    info.live_category_value = get_string(item, "liveCategoryValue");
+    if (item.contains("channel") && item.at("channel").is_object())
+      info.channel = parse_channel(item.at("channel"));
+    if (!info.channel.channel_id.empty())
+      response.data.push_back(std::move(info));
   }
   return response;
 }
@@ -392,6 +503,20 @@ std::optional<VodDetail> ChzzkClient::get_vod_detail(int video_no) {
   detail.duration = get_int(content, "duration");
   if (content.contains("channel") && content.at("channel").is_object())
     detail.channel = parse_channel(content.at("channel"));
+
+  // liveRewindPlaybackJson 경로 (akamaized CDN — Switch에서 재생 가능)
+  if (content.contains("liveRewindPlaybackJson") && !content.at("liveRewindPlaybackJson").is_null()) {
+    json rewind_json;
+    if (content.at("liveRewindPlaybackJson").is_string())
+      rewind_json = json::parse(content.at("liveRewindPlaybackJson").get<std::string>(), nullptr, false);
+    else if (content.at("liveRewindPlaybackJson").is_object())
+      rewind_json = content.at("liveRewindPlaybackJson");
+
+    if (!rewind_json.is_discarded() && rewind_json.is_object()) {
+      detail.media = parse_media_list(rewind_json);
+    }
+  }
+
   return detail;
 }
 

@@ -3,25 +3,29 @@
         title="Switchzzk"
         icon="@res/icon/icon.jpg">
 
-        <brls:Tab label="● LIVE">
+        <brls:Tab label="LIVE" icon="icon/live.png">
             <LiveTab />
         </brls:Tab>
 
-        <brls:Tab label="■ Category">
+        <brls:Tab label="Following" icon="icon/following.png">
+            <FollowingTab />
+        </brls:Tab>
+
+        <brls:Tab label="Category" icon="icon/category.png">
             <CategoryTab />
         </brls:Tab>
 
-        <brls:Tab label="◆ Search">
+        <brls:Tab label="Search" icon="icon/search.png">
             <SearchTab />
         </brls:Tab>
 
-        <brls:Tab label="▶ VOD">
+        <brls:Tab label="VOD" icon="icon/vod.png">
             <VodTab />
         </brls:Tab>
 
         <brls:Separator />
 
-        <brls:Tab label="⚙ Settings">
+        <brls:Tab label="Settings" icon="icon/settings.png">
             <brls:Box
                 width="auto"
                 height="auto"
@@ -34,7 +38,7 @@
                 <brls:Label
                     width="auto"
                     height="auto"
-                    text="Switchzzk v0.2.0"
+                    text="Switchzzk v0.3.0"
                     fontSize="24" />
 
                 <brls:Label
@@ -44,6 +48,14 @@
                     fontSize="16"
                     textColor="#808080"
                     marginTop="10" />
+
+                <brls:Label
+                    width="auto"
+                    height="auto"
+                    text="팔로잉: X 버튼으로 NID_AUT / NID_SES 쿠키 입력"
+                    fontSize="14"
+                    textColor="#707580"
+                    marginTop="20" />
 
             </brls:Box>
         </brls:Tab>

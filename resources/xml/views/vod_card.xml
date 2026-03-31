@@ -1,0 +1,53 @@
+<brls:Box
+    width="24%"
+    height="auto"
+    axis="column"
+    marginRight="8"
+    paddingLeft="8"
+    paddingRight="8"
+    paddingTop="6"
+    paddingBottom="6"
+    focusable="true"
+    cornerRadius="12"
+    backgroundColor="#1E2023">
+
+    <brls:Image
+        id="vod/thumbnail"
+        width="auto"
+        height="110"
+        scalingType="fill"
+        cornerRadius="8"
+        marginBottom="6" />
+
+    <brls:Label
+        id="vod/title"
+        width="auto"
+        height="auto"
+        fontSize="13"
+        textColor="#FFFFFF" />
+
+    <brls:Label
+        id="vod/channel"
+        width="auto"
+        height="auto"
+        fontSize="11"
+        textColor="#00FFA3"
+        marginTop="3" />
+
+    <brls:Box width="auto" height="auto" axis="row" marginTop="2" justifyContent="spaceBetween">
+        <brls:Label
+            id="vod/duration"
+            width="auto"
+            height="auto"
+            fontSize="10"
+            textColor="#707580" />
+
+        <brls:Label
+            id="vod/views"
+            width="auto"
+            height="auto"
+            fontSize="10"
+            textColor="#707580" />
+    </brls:Box>
+
+</brls:Box>

@@ -3,21 +3,29 @@
     height="auto"
     axis="column"
     paddingTop="20"
-    paddingLeft="30"
-    paddingRight="30">
+    paddingLeft="20"
+    paddingRight="20">
 
     <brls:Label
         id="live/status"
         width="auto"
         height="auto"
-        text="@i18n/app/loading"
+        text="로딩 중..."
         fontSize="20"
         textColor="#E1E3DE"
         marginBottom="12" />
 
-    <brls:RecyclerFrame
-        id="live/recycler"
+    <brls:ScrollingFrame
+        id="live/scroll"
         width="auto"
-        grow="1.0" />
+        grow="1.0">
+
+        <brls:Box
+            id="live/grid"
+            width="auto"
+            height="auto"
+            axis="column" />
+
+    </brls:ScrollingFrame>
 
 </brls:Box>

@@ -108,6 +108,16 @@ std::optional<std::string> FixtureHttpClient::get(
   return std::nullopt;
 }
 
+void HttpsHttpClient::setAuthCookies(const std::string& nid_aut, const std::string& nid_ses) {
+  nid_aut_ = nid_aut;
+  nid_ses_ = nid_ses;
+}
+
+std::string HttpsHttpClient::getAuthCookie() const {
+  if (nid_aut_.empty() || nid_ses_.empty()) return "";
+  return "NID_AUT=" + nid_aut_ + "; NID_SES=" + nid_ses_;
+}
+
 std::optional<std::string> HttpsHttpClient::get(
     const std::string& url,
     const std::vector<HttpHeader>& headers) {
@@ -131,14 +141,20 @@ std::optional<std::string> HttpsHttpClient::get(
   header_list = curl_slist_append(header_list, "Cache-Control: no-cache");
   header_list = curl_slist_append(header_list, ("Referer: " + make_referer(url)).c_str());
 
+  // 인증 쿠키 설정
+  std::string cookie = getAuthCookie();
+  if (!cookie.empty()) {
+    curl_easy_setopt(curl, CURLOPT_COOKIE, cookie.c_str());
+  }
+
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 10L);
   curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1L);
   curl_easy_setopt(curl, CURLOPT_USERAGENT,
-                   "Mozilla/5.0 (Nintendo Switch; WebApplet) "
-                   "AppleWebKit/609.4.0 (KHTML, like Gecko) switch-chzzk/0.1");
+                   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                   "(KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36");
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
   curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
   curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30L);

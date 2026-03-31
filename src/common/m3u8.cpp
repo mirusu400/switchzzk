@@ -73,11 +73,20 @@ std::string resolve_relative_url(const std::string& base_url,
   }
 
   const auto base_dir_end = base_without_query.find_last_of('/');
+  std::string result;
   if (base_dir_end == std::string::npos) {
-    return origin + "/" + relative_or_absolute;
+    result = origin + "/" + relative_or_absolute;
+  } else {
+    result = base_without_query.substr(0, base_dir_end + 1) + relative_or_absolute;
   }
 
-  return base_without_query.substr(0, base_dir_end + 1) + relative_or_absolute;
+  // variant URL에 query가 없고 base URL에 query가 있으면 붙여준다
+  // (Naver VOD CDN의 _lsu_sa_ 인증 토큰 등)
+  if (result.find('?') == std::string::npos && query_pos != std::string::npos) {
+    result += base_url.substr(query_pos);
+  }
+
+  return result;
 }
 
 std::vector<VariantStream> parse_variant_playlist(

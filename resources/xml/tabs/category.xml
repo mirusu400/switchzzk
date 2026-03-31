@@ -2,21 +2,30 @@
     width="auto"
     height="auto"
     axis="column"
-    paddingTop="30"
-    paddingLeft="40"
-    paddingRight="40">
+    paddingTop="20"
+    paddingLeft="20"
+    paddingRight="20">
 
     <brls:Label
         id="cat/status"
         width="auto"
         height="auto"
-        text="X로 카테고리 불러오기"
-        fontSize="18"
-        marginBottom="16" />
+        text="카테고리"
+        fontSize="20"
+        textColor="#E1E3DE"
+        marginBottom="12" />
 
-    <brls:RecyclerFrame
-        id="cat/recycler"
+    <brls:ScrollingFrame
+        id="cat/scroll"
         width="auto"
-        grow="1.0" />
+        grow="1.0">
+
+        <brls:Box
+            id="cat/grid"
+            width="auto"
+            height="auto"
+            axis="column" />
+
+    </brls:ScrollingFrame>
 
 </brls:Box>

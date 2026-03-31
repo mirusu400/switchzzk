@@ -132,6 +132,7 @@ struct VodDetail {
   std::string in_key;
   int duration = 0;
   Channel channel;
+  std::vector<Media> media;  // liveRewindPlaybackJson
 };
 
 // 유틸

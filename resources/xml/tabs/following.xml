@@ -7,21 +7,21 @@
     paddingRight="20">
 
     <brls:Label
-        id="search/statusbar"
+        id="following/status"
         width="auto"
         height="auto"
-        text="X 버튼으로 검색"
+        text="팔로잉"
         fontSize="20"
         textColor="#E1E3DE"
         marginBottom="12" />
 
     <brls:ScrollingFrame
-        id="search/scroll"
+        id="following/scroll"
         width="auto"
         grow="1.0">
 
         <brls:Box
-            id="search/grid"
+            id="following/grid"
             width="auto"
             height="auto"
             axis="column" />

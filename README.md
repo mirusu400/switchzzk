@@ -64,4 +64,4 @@ Docker + devkitPro 이미지 기반입니다.
 
 ## 라이선스
 
-MIT
+GPL v3.0

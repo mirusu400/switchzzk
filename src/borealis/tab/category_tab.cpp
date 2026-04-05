@@ -100,16 +100,19 @@ void CategoryTab::buildLiveGrid() {
 void CategoryTab::fetchCategories() {
     dbg("CategoryTab: fetchCategories");
     if (this->statusLabel) this->statusLabel->setText("카테고리 로딩 중...");
+    if (this->spinner) this->spinner->setVisibility(brls::Visibility::VISIBLE);
 
     auto result = chzzkClient_->get_live_categories(30);
     if (!result || result->data.empty()) {
         if (this->statusLabel) this->statusLabel->setText("카테고리를 불러올 수 없습니다");
+        if (this->spinner) this->spinner->setVisibility(brls::Visibility::GONE);
         return;
     }
 
     categories_ = std::move(result->data);
     showingLives_ = false;
     this->buildCategoryList();
+    if (this->spinner) this->spinner->setVisibility(brls::Visibility::GONE);
     if (this->statusLabel)
         this->statusLabel->setText("카테고리 " + std::to_string(categories_.size()) + "개");
 }
@@ -117,16 +120,19 @@ void CategoryTab::fetchCategories() {
 void CategoryTab::openCategory(const chzzk::CategoryInfo& cat) {
     dbg("CategoryTab: openCategory");
     if (this->statusLabel) this->statusLabel->setText(cat.category_value + " 로딩 중...");
+    if (this->spinner) this->spinner->setVisibility(brls::Visibility::VISIBLE);
 
     auto result = chzzkClient_->get_category_lives(cat.category_type, cat.category_id, 20);
     if (!result || result->data.empty()) {
         if (this->statusLabel) this->statusLabel->setText(cat.category_value + " - 라이브 없음");
+        if (this->spinner) this->spinner->setVisibility(brls::Visibility::GONE);
         return;
     }
 
     categoryLives_ = std::move(result->data);
     showingLives_ = true;
     this->buildLiveGrid();
+    if (this->spinner) this->spinner->setVisibility(brls::Visibility::GONE);
     if (this->statusLabel)
         this->statusLabel->setText(cat.category_value + " " + std::to_string(categoryLives_.size()) + "개 라이브  (B: 뒤로)");
 }
@@ -152,6 +158,8 @@ void CategoryTab::playChannel(const chzzk::LiveInfo& info) {
     g_pending_playback = chzzk::SwitchPlaybackRequest{
         .title = detail->live_title, .url = resolved->selected_url, .referer = referer,
         .http_header_fields = "Accept: */*,Accept-Encoding: identity,Connection: close,Cache-Control: no-cache",
+        .channel_id = info.channel.channel_id, .channel_name = info.channel.channel_name,
+        .chat_channel_id = detail->chat_channel_id,
     };
     g_has_pending_playback = true;
     brls::Application::quit();

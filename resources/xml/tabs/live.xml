@@ -15,6 +15,12 @@
         textColor="#E1E3DE"
         marginBottom="12" />
 
+    <brls:ProgressSpinner
+        id="live/spinner"
+        width="auto"
+        height="80"
+        visibility="gone" />
+
     <brls:ScrollingFrame
         id="live/scroll"
         width="auto"

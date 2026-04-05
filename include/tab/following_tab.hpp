@@ -19,6 +19,7 @@ class FollowingTab : public brls::Box {
     void buildGrid();
 
     BRLS_BIND(brls::Label, statusLabel, "following/status");
+    BRLS_BIND(brls::ProgressSpinner, spinner, "following/spinner");
     BRLS_BIND(brls::ScrollingFrame, scrollFrame, "following/scroll");
     BRLS_BIND(brls::Box, gridBox, "following/grid");
 

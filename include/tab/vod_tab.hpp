@@ -32,6 +32,7 @@ class VodTab : public brls::Box {
     void buildGrid();
 
     BRLS_BIND(brls::Label, statusLabel, "vod/status");
+    BRLS_BIND(brls::ProgressSpinner, spinner, "vod/spinner");
     BRLS_BIND(brls::ScrollingFrame, scrollFrame, "vod/scroll");
     BRLS_BIND(brls::Box, gridBox, "vod/grid");
 

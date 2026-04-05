@@ -21,6 +21,7 @@ class CategoryTab : public brls::Box {
     void buildLiveGrid();
 
     BRLS_BIND(brls::Label, statusLabel, "cat/status");
+    BRLS_BIND(brls::ProgressSpinner, spinner, "cat/spinner");
     BRLS_BIND(brls::ScrollingFrame, scrollFrame, "cat/scroll");
     BRLS_BIND(brls::Box, gridBox, "cat/grid");
 

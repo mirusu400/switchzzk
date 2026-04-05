@@ -59,6 +59,7 @@ void SearchTab::doSearch(const std::string& keyword) {
     dbg("SearchTab: doSearch");
 
     if (this->statusLabel) this->statusLabel->setText("\"" + keyword + "\" 검색 중...");
+    if (this->spinner) this->spinner->setVisibility(brls::Visibility::VISIBLE);
 
     // 라이브 검색 우선
     auto liveResult = chzzkClient_->search_lives(keyword, 20);
@@ -69,10 +70,12 @@ void SearchTab::doSearch(const std::string& keyword) {
 
     if (results_.empty()) {
         if (this->statusLabel) this->statusLabel->setText("\"" + keyword + "\" 라이브 결과 없음");
+        if (this->spinner) this->spinner->setVisibility(brls::Visibility::GONE);
         return;
     }
 
     this->buildGrid();
+    if (this->spinner) this->spinner->setVisibility(brls::Visibility::GONE);
     if (this->statusLabel)
         this->statusLabel->setText("\"" + keyword + "\" " + std::to_string(results_.size()) + "개 라이브");
 }
@@ -98,6 +101,8 @@ void SearchTab::playLiveChannel(const chzzk::LiveInfo& info) {
     g_pending_playback = chzzk::SwitchPlaybackRequest{
         .title = detail->live_title, .url = resolved->selected_url, .referer = referer,
         .http_header_fields = "Accept: */*,Accept-Encoding: identity,Connection: close,Cache-Control: no-cache",
+        .channel_id = info.channel.channel_id, .channel_name = info.channel.channel_name,
+        .chat_channel_id = detail->chat_channel_id,
     };
     g_has_pending_playback = true;
     brls::Application::quit();

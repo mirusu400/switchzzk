@@ -15,6 +15,9 @@ struct SwitchPlaybackRequest {
   std::string url;
   std::string referer;
   std::string http_header_fields;
+  std::string channel_id;
+  std::string channel_name;
+  std::string chat_channel_id;
 };
 
 bool run_switch_player(const SwitchPlaybackRequest& request, std::string& error);

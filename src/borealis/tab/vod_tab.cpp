@@ -71,15 +71,18 @@ void VodTab::buildGrid() {
 void VodTab::fetchVods() {
     dbg("VodTab: fetchVods");
     if (this->statusLabel) this->statusLabel->setText("VOD 로딩 중...");
+    if (this->spinner) this->spinner->setVisibility(brls::Visibility::VISIBLE);
 
     auto result = chzzkClient_->get_popular_vods(20);
     if (!result || result->data.empty()) {
         if (this->statusLabel) this->statusLabel->setText("VOD를 불러올 수 없습니다");
+        if (this->spinner) this->spinner->setVisibility(brls::Visibility::GONE);
         return;
     }
 
     vods_ = std::move(result->data);
     this->buildGrid();
+    if (this->spinner) this->spinner->setVisibility(brls::Visibility::GONE);
     if (this->statusLabel)
         this->statusLabel->setText("인기 VOD " + std::to_string(vods_.size()) + "개");
 }
@@ -169,6 +172,7 @@ void VodTab::playVod(const chzzk::VodInfo& info) {
         .url = play_url,
         .referer = referer,
         .http_header_fields = "Accept: */*,Accept-Encoding: identity,Connection: close,Cache-Control: no-cache",
+        .channel_id = info.channel.channel_id, .channel_name = info.channel.channel_name,
     };
     g_has_pending_playback = true;
     brls::Application::quit();

@@ -18,6 +18,7 @@ class SearchTab : public brls::Box {
     void buildGrid();
 
     BRLS_BIND(brls::Label, statusLabel, "search/statusbar");
+    BRLS_BIND(brls::ProgressSpinner, spinner, "search/spinner");
     BRLS_BIND(brls::ScrollingFrame, scrollFrame, "search/scroll");
     BRLS_BIND(brls::Box, gridBox, "search/grid");
 

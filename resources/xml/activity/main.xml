@@ -1,64 +1,89 @@
-<brls:AppletFrame footerHidden="false">
-    <brls:TabFrame
-        title="Switchzzk"
-        icon="@res/icon/icon.jpg">
+<brls:AppletFrame
+        iconInterpolation="linear"
+        headerHidden="true"
+        footerHidden="false">
+    <brls:Box
+            axis="column"
+            width="100%"
+            height="100%">
+        <AutoTabFrame
+                id="main/tabFrame"
+                grow="1"
+                tabBackgroundColor="@theme/color/grey_1"
+                tabItemActiveTextColor="@theme/color/chzzk"
+                disableNavigationDown="true"
+                defaultTab="0"
+                sidebarPosition="left">
 
-        <brls:Tab label="LIVE" icon="icon/live.png">
-            <LiveTab />
-        </brls:Tab>
+            <Tab label=""
+                 fontSize="18"
+                 icon="@res/svg/live.svg"
+                 iconActivate="@res/svg/live_activate.svg">
+                <LiveTab/>
+            </Tab>
 
-        <brls:Tab label="Following" icon="icon/following.png">
-            <FollowingTab />
-        </brls:Tab>
+            <Tab label=""
+                 fontSize="18"
+                 icon="@res/svg/following.svg"
+                 iconActivate="@res/svg/following_activate.svg">
+                <FollowingTab/>
+            </Tab>
 
-        <brls:Tab label="Category" icon="icon/category.png">
-            <CategoryTab />
-        </brls:Tab>
+            <Tab label=""
+                 fontSize="18"
+                 icon="@res/svg/category.svg"
+                 iconActivate="@res/svg/category_activate.svg">
+                <CategoryTab/>
+            </Tab>
 
-        <brls:Tab label="Search" icon="icon/search.png">
-            <SearchTab />
-        </brls:Tab>
+            <Tab label=""
+                 fontSize="18"
+                 icon="@res/svg/search.svg"
+                 iconActivate="@res/svg/search_activate.svg">
+                <SearchTab/>
+            </Tab>
 
-        <brls:Tab label="VOD" icon="icon/vod.png">
-            <VodTab />
-        </brls:Tab>
+            <Tab label=""
+                 fontSize="18"
+                 focusDown="main/login"
+                 icon="@res/svg/vod.svg"
+                 iconActivate="@res/svg/vod_activate.svg">
+                <VodTab/>
+            </Tab>
+        </AutoTabFrame>
 
-        <brls:Separator />
-
-        <brls:Tab label="Settings" icon="icon/settings.png">
-            <brls:Box
-                width="auto"
-                height="auto"
+        <brls:Box
+                wireframe="false"
+                width="100"
                 axis="column"
-                paddingTop="50"
-                paddingBottom="50"
-                paddingLeft="75"
-                paddingRight="75">
+                justifyContent="center"
+                alignItems="center"
+                positionType="absolute"
+                positionBottom="20">
+            <CustomButton
+                    id="main/login"
+                    focusable="true"
+                    highlightCornerRadius="50"
+                    cornerRadius="50"
+                    marginBottom="10"
+                    wireframe="false">
+                <SVGImage
+                        width="48"
+                        height="48"
+                        SVG="@res/svg/ico-login.svg"/>
+            </CustomButton>
 
-                <brls:Label
-                    width="auto"
-                    height="auto"
-                    text="Switchzzk v0.3.0"
-                    fontSize="24" />
-
-                <brls:Label
-                    width="auto"
-                    height="auto"
-                    text="치지직 라이브 스트리밍 for Nintendo Switch"
-                    fontSize="16"
-                    textColor="#808080"
-                    marginTop="10" />
-
-                <brls:Label
-                    width="auto"
-                    height="auto"
-                    text="팔로잉: X 버튼으로 NID_AUT / NID_SES 쿠키 입력"
-                    fontSize="14"
-                    textColor="#707580"
-                    marginTop="20" />
-
-            </brls:Box>
-        </brls:Tab>
-
-    </brls:TabFrame>
+            <CustomButton
+                    id="main/setting"
+                    focusable="true"
+                    highlightCornerRadius="50"
+                    cornerRadius="50"
+                    wireframe="false">
+                <SVGImage
+                        width="48"
+                        height="48"
+                        SVG="@res/svg/ico-setting.svg"/>
+            </CustomButton>
+        </brls:Box>
+    </brls:Box>
 </brls:AppletFrame>

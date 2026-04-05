@@ -53,6 +53,7 @@ class LiveTab : public brls::Box {
     void buildGrid();
 
     BRLS_BIND(brls::Label, statusLabel, "live/status");
+    BRLS_BIND(brls::ProgressSpinner, spinner, "live/spinner");
     BRLS_BIND(brls::ScrollingFrame, scrollFrame, "live/scroll");
     BRLS_BIND(brls::Box, gridBox, "live/grid");
 

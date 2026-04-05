@@ -19,6 +19,9 @@
 #include <curl/curl.h>
 #endif
 
+#include "chzzk/chat_client.hpp"
+#include <SDL2/SDL_ttf.h>
+
 // 전역 (namespace 밖) — vod_tab.cpp에서 extern으로 접근
 
 namespace chzzk {
@@ -191,6 +194,134 @@ static int vod_stream_open(void* user_data, char* uri, mpv_stream_cb_info* info)
   return 0;
 }
 
+// ─── SDL_ttf → GL 텍스트 렌더링 ───
+struct GlText {
+  GLuint texture = 0;
+  int w = 0, h = 0;
+};
+
+static TTF_Font* g_chat_font = nullptr;
+
+static void initChatFont() {
+  if (g_chat_font) return;
+  TTF_Init();
+  g_chat_font = TTF_OpenFont("/switch/switchzzk_font.ttf", 20);
+  if (!g_chat_font) {
+    // fallback: try romfs
+    g_chat_font = TTF_OpenFont("romfs:/font/switch_font.ttf", 20);
+  }
+}
+
+static GlText renderText(const std::string& text, SDL_Color color = {255, 255, 255, 255}) {
+  GlText result;
+  if (!g_chat_font || text.empty()) return result;
+
+  SDL_Surface* surface = TTF_RenderUTF8_Blended_Wrapped(g_chat_font, text.c_str(), color, 380);
+  if (!surface) return result;
+
+  // Convert to RGBA
+  SDL_Surface* rgba = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ABGR8888, 0);
+  SDL_FreeSurface(surface);
+  if (!rgba) return result;
+
+  glGenTextures(1, &result.texture);
+  glBindTexture(GL_TEXTURE_2D, result.texture);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, rgba->w, rgba->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba->pixels);
+
+  result.w = rgba->w;
+  result.h = rgba->h;
+  SDL_FreeSurface(rgba);
+  return result;
+}
+
+// 간단한 GL ES 2.0 텍스처드 쿼드 셰이더
+static GLuint g_text_program = 0;
+static GLuint g_text_vbo = 0;
+
+static const char* text_vs =
+    "attribute vec2 pos;\n"
+    "attribute vec2 uv;\n"
+    "varying vec2 v_uv;\n"
+    "void main() { gl_Position = vec4(pos, 0.0, 1.0); v_uv = uv; }\n";
+
+static const char* text_fs =
+    "precision mediump float;\n"
+    "varying vec2 v_uv;\n"
+    "uniform sampler2D tex;\n"
+    "void main() { gl_FragColor = texture2D(tex, v_uv); }\n";
+
+static void initTextShader() {
+  if (g_text_program) return;
+
+  GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vs, 1, &text_vs, nullptr);
+  glCompileShader(vs);
+
+  GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fs, 1, &text_fs, nullptr);
+  glCompileShader(fs);
+
+  g_text_program = glCreateProgram();
+  glAttachShader(g_text_program, vs);
+  glAttachShader(g_text_program, fs);
+  glBindAttribLocation(g_text_program, 0, "pos");
+  glBindAttribLocation(g_text_program, 1, "uv");
+  glLinkProgram(g_text_program);
+
+  glDeleteShader(vs);
+  glDeleteShader(fs);
+
+  glGenBuffers(1, &g_text_vbo);
+}
+
+static void drawGlText(const GlText& text, int x, int y, int screen_w, int screen_h) {
+  if (!text.texture || !g_text_program) return;
+
+  // NDC 좌표 변환
+  float x0 = (2.0f * x / screen_w) - 1.0f;
+  float y0 = 1.0f - (2.0f * y / screen_h);
+  float x1 = (2.0f * (x + text.w) / screen_w) - 1.0f;
+  float y1 = 1.0f - (2.0f * (y + text.h) / screen_h);
+
+  float verts[] = {
+    x0, y1, 0.0f, 1.0f,  // bottom-left
+    x1, y1, 1.0f, 1.0f,  // bottom-right
+    x0, y0, 0.0f, 0.0f,  // top-left
+    x1, y0, 1.0f, 0.0f,  // top-right
+  };
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  glUseProgram(g_text_program);
+  glBindBuffer(GL_ARRAY_BUFFER, g_text_vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_DYNAMIC_DRAW);
+
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, text.texture);
+
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+  glDisableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+  glUseProgram(0);
+  glDisable(GL_BLEND);
+}
+
+static void freeGlText(GlText& text) {
+  if (text.texture) {
+    glDeleteTextures(1, &text.texture);
+    text.texture = 0;
+  }
+}
+
 void append_log(const std::string& message) {
   std::ofstream log("sdmc:/switch/switch_chzzk.log", std::ios::app);
   if (log.is_open()) {
@@ -223,6 +354,8 @@ public:
 
   bool run(std::string& error) {
     append_log("player: run() begin");
+    // 슬립 방지 (영상 재생 중 화면 꺼짐 차단)
+    appletSetMediaPlaybackState(true);
     if (!init_sdl(error)) {
       append_log("player: init_sdl failed: " + error);
       return false;
@@ -261,6 +394,16 @@ public:
         // 에러지만 계속 수집해서 앞에 쌓인 로그 메시지를 모두 남김
       }
     }
+    // 채팅 연결 (chatChannelId가 있는 경우)
+    if (!request_.chat_channel_id.empty()) {
+      append_log("player: connecting chat " + request_.chat_channel_id);
+      if (chat_client_.connect(request_.chat_channel_id)) {
+        append_log("player: chat connected");
+      } else {
+        append_log("player: chat connection failed (continuing without chat)");
+      }
+    }
+
     append_log("player: early drain done, entering loop");
     loop();
     append_log("player: loop ended");
@@ -338,6 +481,10 @@ private:
       SDL_JoystickOpen(i);
     }
 
+    // 텍스트 렌더링 초기화
+    initChatFont();
+    initTextShader();
+
     return true;
   }
 
@@ -355,8 +502,10 @@ private:
     mpv_set_option_string(mpv_, "profile", "sw-fast");
     mpv_set_option_string(mpv_, "osc", "no");
     mpv_set_option_string(mpv_, "osd-level", "1");
-    mpv_set_option_string(mpv_, "osd-font-size", "36");
-    mpv_set_option_string(mpv_, "osd-duration", "1500");
+    mpv_set_option_string(mpv_, "osd-font-size", "28");
+    mpv_set_option_string(mpv_, "osd-duration", "3000");
+    mpv_set_option_string(mpv_, "osd-font", "/switch/switchzzk_font.ttf");
+    mpv_set_option_string(mpv_, "sub-font", "/switch/switchzzk_font.ttf");
     mpv_set_option_string(mpv_, "input-default-bindings", "no");
     mpv_set_option_string(mpv_, "terminal", "no");
     mpv_set_option_string(mpv_, "keep-open", "yes");
@@ -441,7 +590,7 @@ private:
         if (event.type == SDL_JOYBUTTONDOWN) {
           int btn = event.jbutton.button;
           append_log("player: joybtn=" + std::to_string(btn));
-          if (btn == 1 || btn == 10) {
+          if (btn == 1) {  // B button only (not + button=10)
             running = false;
           } else if (btn == 0) {
             const char* cmd[] = {"cycle", "pause", nullptr};
@@ -472,6 +621,8 @@ private:
           } else if (btn == 12) {  // D-pad Left
             const char* cmd[] = {"seek", "-10", nullptr};
             mpv_command(mpv_, cmd);
+          } else if (btn == 10) {  // + button: 채팅 토글
+            chat_visible_ = !chat_visible_;
           }
         }
 
@@ -555,6 +706,15 @@ private:
       if (should_render) {
         render_frame();
         force_redraw = paused;
+
+        // 채팅 알림 (새 메시지가 있으면 우측에 초록색 바)
+        if (chat_client_.isConnected()) {
+          auto msgs = chat_client_.getMessages();
+          if (msgs.size() > last_chat_count_) {
+            last_chat_count_ = msgs.size();
+            chat_display_timer_ = 60; // 1초 표시
+          }
+        }
       } else {
         SDL_Delay(10);
       }
@@ -691,12 +851,53 @@ private:
       glDisable(GL_SCISSOR_TEST);
     }
 
+    // 채팅 텍스트 렌더링 (우측) — + 버튼으로 토글
+    if (chat_visible_ && chat_client_.isConnected() && g_chat_font) {
+      auto msgs = chat_client_.getMessages();
+      if (msgs.size() > last_chat_count_ || (++chat_text_update_ >= 60)) {
+        chat_text_update_ = 0;
+        last_chat_count_ = msgs.size();
+
+        // 최근 8개 메시지
+        std::string chat_str;
+        size_t start = msgs.size() > 8 ? msgs.size() - 8 : 0;
+        for (size_t i = start; i < msgs.size(); i++) {
+          if (!chat_str.empty()) chat_str += "\n";
+          chat_str += msgs[i].nickname + ": " + msgs[i].message;
+        }
+
+        if (!chat_str.empty()) {
+          freeGlText(chat_text_texture_);
+          chat_text_texture_ = renderText(chat_str, {255, 255, 255, 200});
+        }
+      }
+
+      if (chat_text_texture_.texture) {
+        // 우측에 반투명 배경 + 텍스트
+        int tx = width - chat_text_texture_.w - 20;
+        int ty = 60;
+
+        // 배경
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(tx - 8, height - ty - chat_text_texture_.h - 8, chat_text_texture_.w + 16, chat_text_texture_.h + 16);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glDisable(GL_SCISSOR_TEST);
+
+        // 텍스트
+        drawGlText(chat_text_texture_, tx, ty, width, height);
+      }
+    }
+
     SDL_GL_SwapWindow(window_);
     mpv_render_context_report_swap(render_context_);
   }
 
   void cleanup() {
     append_log("player: cleanup begin");
+    // 채팅을 먼저 안전하게 종료 (mpv/SDL 정리 전에)
+    try { chat_client_.disconnect(); } catch (...) {}
+    append_log("player: chat disconnected");
     if (render_context_) {
       append_log("player: cleanup render_context");
       mpv_render_context_set_update_callback(render_context_, nullptr, nullptr);
@@ -726,6 +927,8 @@ private:
 
     append_log("player: cleanup SDL_Quit");
     SDL_Quit();
+    // 슬립 방지 해제
+    appletSetMediaPlaybackState(false);
     append_log("player: cleanup done");
   }
 
@@ -739,6 +942,12 @@ private:
   std::string terminal_error_;
   int volume_display_ = -1;
   int volume_display_timer_ = 0;
+  chzzk::ChatClient chat_client_;
+  int chat_display_timer_ = 0;
+  size_t last_chat_count_ = 0;
+  GlText chat_text_texture_{};
+  int chat_text_update_ = 0;
+  bool chat_visible_ = true;
 };
 
 }  // namespace

@@ -41,6 +41,13 @@ endif()
 # Build borealis
 add_subdirectory(${BOREALIS_LIBRARY})
 
+# SVG rendering (for wiliwili-ported view components)
+set(BUILD_SHARED_LIBS OFF)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+# Switch/newlib lacks <sys/mman.h>; disable plutovg's font-face cache loader.
+add_compile_definitions(PLUTOVG_DISABLE_FONT_FACE_CACHE_LOAD)
+add_subdirectory(library/lunasvg EXCLUDE_FROM_ALL)
+
 # Main target
 program_target(${PROJECT_NAME} "${MAIN_SRC}")
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
@@ -75,11 +82,12 @@ if (PLATFORM_SWITCH)
         PkgConfig::EGL
         PkgConfig::CURL
         GLESv2
+        SDL2_ttf freetype bz2 png16
         mbedtls mbedx509 mbedcrypto
     )
 endif()
 
-target_link_libraries(${PROJECT_NAME} PRIVATE borealis z ${APP_PLATFORM_LIB})
+target_link_libraries(${PROJECT_NAME} PRIVATE borealis lunasvg::lunasvg z ${APP_PLATFORM_LIB})
 
 # Switch NRO generation
 if (PLATFORM_SWITCH)

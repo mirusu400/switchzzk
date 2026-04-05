@@ -135,6 +135,13 @@ struct VodDetail {
   std::vector<Media> media;  // liveRewindPlaybackJson
 };
 
+// 최근 시청 채널
+struct RecentChannel {
+  std::string channel_id;
+  std::string channel_name;
+  std::int64_t timestamp = 0;  // unix epoch seconds
+};
+
 // 유틸
 inline std::string format_duration(int seconds) {
   int h = seconds / 3600;

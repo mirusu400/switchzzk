@@ -74,15 +74,18 @@ void FollowingTab::fetchFollowing() {
     dbg("FollowingTab: fetchFollowing");
     httpClient_->setAuthCookies(g_nid_aut, g_nid_ses);
     if (this->statusLabel) this->statusLabel->setText("팔로잉 로딩 중...");
+    if (this->spinner) this->spinner->setVisibility(brls::Visibility::VISIBLE);
 
     auto result = chzzkClient_->get_following_lives();
     if (!result || result->data.empty()) {
         if (this->statusLabel) this->statusLabel->setText("팔로잉 라이브 없음 (X: 로그인)");
+        if (this->spinner) this->spinner->setVisibility(brls::Visibility::GONE);
         return;
     }
 
     lives_ = std::move(result->data);
     this->buildGrid();
+    if (this->spinner) this->spinner->setVisibility(brls::Visibility::GONE);
     if (this->statusLabel)
         this->statusLabel->setText("팔로잉 라이브 " + std::to_string(lives_.size()) + "개");
 }
@@ -108,6 +111,8 @@ void FollowingTab::playChannel(const chzzk::LiveInfo& info) {
     g_pending_playback = chzzk::SwitchPlaybackRequest{
         .title = detail->live_title, .url = resolved->selected_url, .referer = referer,
         .http_header_fields = "Accept: */*,Accept-Encoding: identity,Connection: close,Cache-Control: no-cache",
+        .channel_id = info.channel.channel_id, .channel_name = info.channel.channel_name,
+        .chat_channel_id = detail->chat_channel_id,
     };
     g_has_pending_playback = true;
     brls::Application::quit();

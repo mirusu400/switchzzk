@@ -120,12 +120,14 @@ void LiveTab::buildGrid() {
 void LiveTab::fetchLives() {
     dbg("fetchLives begin");
     if (this->statusLabel) this->statusLabel->setText("로딩 중...");
+    if (this->spinner) this->spinner->setVisibility(brls::Visibility::VISIBLE);
     loading_ = true;
 
     auto result = chzzkClient_->get_popular_lives(20);
     if (!result || result->data.empty()) {
         dbg("fetchLives: FAILED");
         if (this->statusLabel) this->statusLabel->setText("라이브를 불러올 수 없습니다");
+        if (this->spinner) this->spinner->setVisibility(brls::Visibility::GONE);
         loading_ = false;
         return;
     }
@@ -138,6 +140,7 @@ void LiveTab::fetchLives() {
     lives_ = std::move(result->data);
     this->buildGrid();
 
+    if (this->spinner) this->spinner->setVisibility(brls::Visibility::GONE);
     if (this->statusLabel)
         this->statusLabel->setText("LIVE " + std::to_string(lives_.size()) + "개" +
                                     (lowLatency_ ? " [LL-HLS]" : ""));
@@ -187,6 +190,8 @@ void LiveTab::playChannel(const chzzk::LiveInfo& info) {
     g_pending_playback = chzzk::SwitchPlaybackRequest{
         .title = detail->live_title, .url = resolved->selected_url, .referer = referer,
         .http_header_fields = "Accept: */*,Accept-Encoding: identity,Connection: close,Cache-Control: no-cache",
+        .channel_id = info.channel.channel_id, .channel_name = info.channel.channel_name,
+        .chat_channel_id = detail->chat_channel_id,
     };
     g_has_pending_playback = true;
     brls::Application::quit();
